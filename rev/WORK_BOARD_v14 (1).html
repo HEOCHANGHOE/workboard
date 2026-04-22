@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Work Board v14</title>
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--line:rgba(60,60,67,.12);--line-soft:rgba(60,60,67,.06);--text:#111;--text2:#3c3c43;--text3:rgba(60,60,67,.6);--text4:rgba(60,60,67,.35);--blue:#007aff;--green:#34c759;--orange:#ff9500;--red:#ff3b30;--purple:#af52de;--gray:#8e8e93;--blue-bg:rgba(0,122,255,.12);--green-bg:rgba(52,199,89,.12);--orange-bg:rgba(255,149,0,.12);--red-bg:rgba(255,59,48,.12);--purple-bg:rgba(175,82,222,.12);--gray-bg:rgba(142,142,147,.12);--r10:10px;--r12:12px;--r16:16px;--shadow:0 1px 0 rgba(0,0,0,.04),0 4px 18px rgba(0,0,0,.06)}
+*{box-sizing:border-box}html{-webkit-font-smoothing:antialiased}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}.hidden{display:none!important}
+.wrap{max-width:1480px;margin:0 auto;padding:16px}
+.nav{position:sticky;top:0;z-index:20;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:rgba(242,242,247,.85);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--line-soft)}
+.nav-title{font-size:17px;font-weight:700;letter-spacing:-.3px}.nav-right{display:flex;align-items:center;gap:10px}
+.nav-time{font-size:13px;color:var(--text3);font-variant-numeric:tabular-nums}
+.nav-live{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:var(--blue);background:var(--blue-bg)}
+.tabs{position:sticky;top:48px;z-index:19;display:flex;gap:6px;overflow-x:auto;padding:8px 16px;background:rgba(242,242,247,.85);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--line-soft)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:none;background:transparent;color:var(--text3);cursor:pointer;padding:8px 12px;border-radius:999px;white-space:nowrap;font-size:13px;font-weight:600}.tab.active{color:#fff;background:var(--blue)}
+.page{display:none}.page.active{display:block}
+.grid-2{display:grid;grid-template-columns:1.1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:980px){.grid-2{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--r16);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+.card-title{font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--text3);text-transform:uppercase}.card-body{padding:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:680px){.form-grid{grid-template-columns:1fr}}
+.field{margin-bottom:12px}.label{display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--text3)}
+.input,.select,.textarea{width:100%;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:var(--r10);padding:10px 12px;outline:none}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.12)}
+.textarea{min-height:88px;resize:vertical}
+.priority-row{display:flex;gap:6px}
+.priority-btn{flex:1;border:1px solid var(--line);background:#fff;color:var(--text3);padding:10px 0;border-radius:var(--r10);cursor:pointer;font-weight:700}
+.priority-btn.active.high{background:var(--red-bg);color:var(--red);border-color:rgba(255,59,48,.22)}
+.priority-btn.active.mid{background:var(--orange-bg);color:var(--orange);border-color:rgba(255,149,0,.22)}
+.priority-btn.active.low{background:var(--green-bg);color:var(--green);border-color:rgba(52,199,89,.22)}
+.btn-row{display:flex;gap:8px}.btn{border:none;border-radius:var(--r12);cursor:pointer;padding:11px 14px;font-weight:700}
+.btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#eef0f4;color:var(--text2)}.btn-danger{background:var(--red);color:#fff}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft)}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);padding:16px 14px}.kpi-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.kpi-value{margin-top:6px;font-size:28px;font-weight:800;letter-spacing:-.7px}
+.kpi.blue .kpi-value{color:var(--blue)}.kpi.green .kpi-value{color:var(--green)}.kpi.orange .kpi-value{color:var(--orange)}.kpi.red .kpi-value{color:var(--red)}.kpi.purple .kpi-value{color:var(--purple)}.kpi.gray .kpi-value{color:var(--gray)}
+.chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr}}
+.chart-card{border:1px solid var(--line-soft);border-radius:var(--r12);padding:14px;min-height:280px}
+.chart-title{font-size:13px;font-weight:800;margin-bottom:10px}.chart-box{min-height:220px;display:flex;align-items:center;justify-content:center}
+.chart-empty{color:var(--text4);font-size:13px}.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}.legend-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.list-box{max-height:360px;overflow:auto}
+.list-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line-soft)}.list-item:last-child{border-bottom:none}
+.score-badge,.mini-badge,.status-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:11px;font-weight:800}
+.score-badge{height:24px;padding:0 9px}
+.score-critical{background:var(--red-bg);color:var(--red)}.score-urgent{background:var(--orange-bg);color:var(--orange)}.score-watch{background:rgba(255,204,0,.18);color:#8a6a00}.score-low{background:var(--gray-bg);color:var(--gray)}
+.task-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.task-meta{margin-top:2px;font-size:12px;color:var(--text3)}
+.status-badge{border:none;padding:6px 10px;cursor:pointer}
+.st-미착수{background:var(--gray-bg);color:var(--gray)}.st-진행중{background:var(--blue-bg);color:var(--blue)}.st-대기{background:var(--purple-bg);color:var(--purple)}.st-완료{background:var(--green-bg);color:var(--green)}
+.mini-badge{min-width:44px;padding:4px 8px}.mini-red{background:var(--red-bg);color:var(--red)}.mini-orange{background:var(--orange-bg);color:var(--orange)}.mini-blue{background:var(--blue-bg);color:var(--blue)}
+.empty{text-align:center;color:var(--text4);padding:36px 16px}
+.filter-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line-soft)}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:#fff;color:var(--text3);padding:6px 12px;border-radius:999px;cursor:pointer;font-weight:700;font-size:12px}.pill.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.table-wrap{overflow:auto;padding:0 16px 16px}.table{width:100%;border-collapse:collapse;min-width:980px}
+.table th{text-align:left;font-size:11px;color:var(--text3);padding:9px 8px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.4px}
+.table td{padding:10px 8px;border-bottom:1px solid var(--line-soft);vertical-align:middle;font-size:13px}
+.table tr.done-row{opacity:.62}.table .name-cell{max-width:220px}
+.table .name-ellipsis{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inline-select{width:100%;border:1px solid var(--line);border-radius:9px;padding:7px 8px;background:#fff}
+.text-link{border:none;background:transparent;color:var(--blue);cursor:pointer;font-weight:700}
+.icon-btn{border:none;background:transparent;cursor:pointer;color:var(--text3);font-size:16px}.icon-btn:hover{color:var(--red)}
+.priority-high{color:var(--red);font-weight:800}.priority-mid{color:var(--orange);font-weight:800}.priority-low{color:var(--green);font-weight:800}
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px 16px}
+.page-btn{border:1px solid var(--line);background:#fff;cursor:pointer;border-radius:8px;min-width:34px;height:34px}
+.page-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:800}.page-btn:disabled{opacity:.4;cursor:not-allowed}
+.page-info{color:var(--text3);font-size:12px;margin-left:6px}
+.report-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+.report-nav{display:flex;align-items:center;gap:8px}
+.report-nav-btn{width:32px;height:32px;border-radius:50%;border:none;background:#eef0f4;cursor:pointer;font-size:16px}
+.report-label{font-size:15px;font-weight:800}
+.report-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft)}
+@media(max-width:760px){.report-stats{grid-template-columns:repeat(2,1fr)}}
+.report-stat{background:#fff;padding:14px}.report-stat .v{font-size:24px;font-weight:800}.report-stat .l{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;font-weight:700}
+.hist-item{padding:12px 16px;border-bottom:1px solid var(--line-soft)}.hist-item:last-child{border-bottom:none}
+.hist-title{font-size:14px;font-weight:700}.hist-meta{font-size:12px;color:var(--text3);margin-top:4px}
+.hist-actions{display:flex;gap:8px;margin-top:8px}
+.hist-content{margin-top:10px;padding:12px;border-radius:10px;background:#f7f8fb;color:var(--text2);font-size:13px;line-height:1.6;white-space:pre-wrap}
+.notice{margin:0 16px 16px;padding:10px 12px;border-radius:var(--r10);background:rgba(0,122,255,.08);color:#0b63c8;font-size:12px;font-weight:600}
+.due-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.due-date-input{flex:1;min-width:130px;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:var(--r10);padding:10px 12px;outline:none}
+.due-date-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.12)}
+.ampm-group{display:flex;border:1px solid var(--line);border-radius:var(--r10);overflow:hidden}
+.ampm-btn{border:none;background:#fff;color:var(--text3);padding:10px 10px;cursor:pointer;font-weight:700;font-size:13px;transition:background .15s,color .15s}
+.ampm-btn.active{background:var(--blue);color:#fff}
+.due-sel{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:var(--r10);padding:10px 6px;outline:none;cursor:pointer;min-width:60px}
+.due-sel:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.12)}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50;background:rgba(0,0,0,.22);padding:16px}
+.modal.open{display:flex}
+.modal-box{width:min(720px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#fff;border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 18px;border-bottom:1px solid var(--line-soft)}
+.modal-title{font-size:16px;font-weight:800}.modal-sub{margin-top:4px;font-size:12px;color:var(--text3)}
+.modal-close{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;background:#eef0f4;font-size:18px;color:var(--text2)}
+.modal-body{padding:18px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;padding:0 18px 18px}
+.helper-text{margin-top:8px;font-size:12px;color:var(--text3)}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-title">Work Board v14</div><div class="nav-right"><div id="navTime" class="nav-time"></div><div class="nav-live">LIVE</div></div></nav>
+<div class="tabs"><button class="tab active" data-tab="home">홈</button><button class="tab" data-tab="tasks">업무 목록</button><button class="tab" data-tab="weekly">주간 리포트</button><button class="tab" data-tab="monthly">월간 리포트</button></div>
+<div class="wrap">
+<section class="page active" id="page-home">
+<div class="grid-2">
+<div class="card"><div class="card-head"><div class="card-title">New Task</div></div><div class="card-body">
+<input type="hidden" id="editId"/>
+<div class="field"><label class="label" for="taskName">업무명</label><input id="taskName" class="input" type="text" placeholder="업무 내용을 입력하세요"/></div>
+<div class="form-grid">
+<div class="field"><label class="label" for="taskChannel">채널</label><select id="taskChannel" class="select"><option value="웍스">웍스</option><option value="메일">메일</option><option value="전화">전화</option><option value="회의">회의</option><option value="기타">기타</option></select></div>
+<div class="field"><label class="label" for="taskStatus">상태</label><select id="taskStatus" class="select"><option value="미착수">미착수</option><option value="진행중">진행중</option><option value="대기">대기</option><option value="완료">완료</option></select></div>
+</div>
+<div class="field"><label class="label">중요도</label><div class="priority-row"><button type="button" class="priority-btn" data-priority="상">상</button><button type="button" class="priority-btn active mid" data-priority="중">중</button><button type="button" class="priority-btn" data-priority="하">하</button></div></div>
+<div class="field">
+<label class="label">마감일 / 시간</label>
+<div style="margin-bottom:6px"><input id="taskDueDate" class="due-date-input" type="date" style="width:100%"/></div>
+<div class="due-row"><div class="ampm-group"><button type="button" class="ampm-btn active" id="ampmAM">오전</button><button type="button" class="ampm-btn" id="ampmPM">오후</button></div><select id="dueHour" class="due-sel"></select><select id="dueMin" class="due-sel"></select></div>
+</div>
+<div class="field"><label class="label" for="taskDesc">상세 내용</label><textarea id="taskDesc" class="textarea" placeholder="상세 내용을 입력하세요"></textarea></div>
+<div class="btn-row"><button type="button" class="btn btn-primary" id="saveBtn">업무 저장</button><button type="button" class="btn btn-secondary" id="resetBtn">초기화</button></div>
+</div></div>
+<div>
+<div class="card"><div class="card-head"><div class="card-title">Today's Priority</div></div><div class="list-box" id="todayList"></div></div>
+<div class="grid-2" style="grid-template-columns:1fr 1fr">
+<div class="card" style="margin-bottom:0"><div class="card-head"><div class="card-title">Due Soon</div></div><div class="list-box" id="dueSoonList"></div></div>
+<div class="card" style="margin-bottom:0"><div class="card-head"><div class="card-title">Overdue</div></div><div class="list-box" id="overdueList"></div></div>
+</div></div></div>
+<div class="card"><div class="card-head"><div class="card-title">Dashboard</div></div>
+<div class="kpi-grid">
+<div class="kpi blue"><div class="kpi-label">전체 업무</div><div class="kpi-value" id="kpiTotal">0</div></div>
+<div class="kpi orange"><div class="kpi-label">이번주 관련 업무</div><div class="kpi-value" id="kpiWeekRelated">0</div></div>
+<div class="kpi purple"><div class="kpi-label">이번달 관련 업무</div><div class="kpi-value" id="kpiMonthRelated">0</div></div>
+<div class="kpi green"><div class="kpi-label">완료</div><div class="kpi-value" id="kpiDone">0</div></div>
+<div class="kpi blue"><div class="kpi-label">진행중</div><div class="kpi-value" id="kpiDoing">0</div></div>
+<div class="kpi gray"><div class="kpi-label">미착수</div><div class="kpi-value" id="kpiTodo">0</div></div>
+<div class="kpi purple"><div class="kpi-label">대기</div><div class="kpi-value" id="kpiHold">0</div></div>
+<div class="kpi red"><div class="kpi-label">마감임박</div><div class="kpi-value" id="kpiDueSoon">0</div></div>
+</div>
+<div class="chart-grid">
+<div class="chart-card"><div class="chart-title">STATUS DISTRIBUTION</div><div class="chart-box" id="chartStatus"></div><div class="legend" id="legendStatus"></div></div>
+<div class="chart-card"><div class="chart-title">CHANNEL COUNTS</div><div class="chart-box" id="chartChannel"></div></div>
+<div class="chart-card"><div class="chart-title">LAST 7 DAYS REGISTRATION TREND</div><div class="chart-box" id="chartTrend"></div></div>
+</div></div>
+</section>
+<section class="page" id="page-tasks">
+<div class="card">
+<div class="filter-row"><div class="pills" id="statusFilters"><button class="pill active" data-status-filter="전체">전체</button><button class="pill" data-status-filter="미착수">미착수</button><button class="pill" data-status-filter="진행중">진행중</button><button class="pill" data-status-filter="대기">대기</button><button class="pill" data-status-filter="완료">완료</button></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text3)">보기</span><select id="rowsPerPage" class="select" style="width:92px;padding:8px 10px"><option value="10">10개</option><option value="25">25개</option><option value="50">50개</option></select></div></div>
+<div class="notice">상세 내용은 팝업에서 저장되며, 저장 즉시 localStorage에 반영됩니다.</div>
+<div class="table-wrap"><table class="table"><thead><tr><th>업무명</th><th>채널</th><th>마감일/시간</th><th>중요도</th><th>상태</th><th>등록일</th><th>상세</th><th>수정</th><th>삭제</th></tr></thead><tbody id="taskTableBody"></tbody></table></div>
+<div class="pagination" id="taskPagination"></div>
+</div>
+</section>
+<section class="page" id="page-weekly">
+<div class="card"><div class="report-head"><div class="report-nav"><button class="report-nav-btn" id="weeklyPrev">&#8249;</button><div class="report-label" id="weeklyLabel"></div><button class="report-nav-btn" id="weeklyNext">&#8250;</button></div><button class="btn btn-secondary" id="weeklyOpenReport">리포트 작성/수정</button></div><div class="report-stats" id="weeklyStats"></div><div class="card-head"><div class="card-title">Weekly Tasks</div></div><div class="list-box" id="weeklyTasks"></div></div>
+<div class="card"><div class="card-head"><div class="card-title">Saved Weekly Reports</div></div><div id="weeklyHistory"></div></div>
+</section>
+<section class="page" id="page-monthly">
+<div class="card"><div class="report-head"><div class="report-nav"><button class="report-nav-btn" id="monthlyPrev">&#8249;</button><div class="report-label" id="monthlyLabel"></div><button class="report-nav-btn" id="monthlyNext">&#8250;</button></div><button class="btn btn-secondary" id="monthlyOpenReport">리포트 작성/수정</button></div><div class="report-stats" id="monthlyStats"></div><div class="card-head"><div class="card-title">Monthly Tasks</div></div><div class="list-box" id="monthlyTasks"></div></div>
+<div class="card"><div class="card-head"><div class="card-title">Saved Monthly Reports</div></div><div id="monthlyHistory"></div></div>
+</section>
+</div>
+<div class="modal" id="detailModal"><div class="modal-box"><div class="modal-head"><div><div class="modal-title">상세 내용</div><div class="modal-sub" id="detailModalSub"></div></div><button class="modal-close" type="button" id="detailModalClose">&#215;</button></div><div class="modal-body"><input type="hidden" id="detailTaskId"/><div class="field"><label class="label" for="detailTaskName">업무명</label><input id="detailTaskName" class="input" type="text" readonly/></div><div class="field"><label class="label" for="detailTaskDesc">상세 내용</label><textarea id="detailTaskDesc" class="textarea" placeholder="상세 내용을 입력하세요"></textarea></div></div><div class="modal-actions"><button class="btn btn-secondary" type="button" id="detailModalCancel">닫기</button><button class="btn btn-primary" type="button" id="detailModalSave">저장</button></div></div></div>
+<div class="modal" id="reportModal"><div class="modal-box"><div class="modal-head"><div><div class="modal-title" id="reportModalTitle">리포트 작성</div><div class="modal-sub" id="reportModalSub"></div></div><button class="modal-close" type="button" id="reportModalClose">&#215;</button></div><div class="modal-body"><input type="hidden" id="reportType"/><input type="hidden" id="reportPeriodKey"/><div class="field"><label class="label" for="reportPeriodLabel">기간</label><input id="reportPeriodLabel" class="input" type="text" readonly/></div><div class="field"><label class="label" for="reportContent">내용</label><textarea id="reportContent" class="textarea" style="min-height:280px" placeholder="리포트 내용을 입력하세요"></textarea><div class="helper-text">형식: 번호. 업무명 [진행 상태] — 자유롭게 수정 가능합니다.</div></div></div><div class="modal-actions"><button class="btn btn-secondary" type="button" id="reportModalCancel">닫기</button><button class="btn btn-primary" type="button" id="reportModalSave">저장</button></div></div></div>
+<script>
+(function(){
+"use strict";
+var SK="work_dashboard_tasks_v1",WK="work_weekly_history_v1",MK="work_monthly_history_v1";
+var SL=["미착수","진행중","대기","완료"],CL=["웍스","메일","전화","회의","기타"];
+var SC={"완료":"#34c759","진행중":"#007aff","대기":"#af52de","미착수":"#8e8e93"},CC=["#007aff","#34c759","#ff9500","#af52de","#8e8e93"];
+var tasks=[],wHist=[],mHist=[],sPri="중",fSt="전체",curPage=1,rpp=10,wOff=0,mOff=0,ampm="오전";
+var expW=new Set(),expM=new Set();
+var $=function(id){return document.getElementById(id);};
+var esc=function(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");};
+function p2(n){return String(n).padStart(2,"0");}
+function sArr(r){if(!r)return[];try{var p=JSON.parse(r);return Array.isArray(p)?p:[];}catch(e){return[];}}
+function sod(d){var x=new Date(d);x.setHours(0,0,0,0);return x;}
+function eod(d){var x=new Date(d);x.setHours(23,59,59,999);return x;}
+function aD(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function gWR(o){o=o||0;var nw=new Date(),b=sod(nw),dy=b.getDay(),ms=dy===0?-6:1-dy,s=aD(b,ms+o*7);return{start:s,end:eod(aD(s,6))};}
+function gMR(o){o=o||0;var nw=new Date();return{start:new Date(nw.getFullYear(),nw.getMonth()+o,1,0,0,0,0),end:new Date(nw.getFullYear(),nw.getMonth()+o+1,0,23,59,59,999)};}
+function pKT(s){if(!s||typeof s!=="string")return{hour:12,minute:0};var m=s.trim().match(/^(오전|오후)\s*(\d{1,2}):(\d{2})$/);if(m){var h=Number(m[2]),mn=Number(m[3]);if(m[1]==="오전"){if(h===12)h=0;}else{if(h!==12)h+=12;}return{hour:h,minute:mn};}var m2=s.trim().match(/^(\d{1,2}):(\d{2})$/);if(m2)return{hour:Number(m2[1]),minute:Number(m2[2])};return{hour:12,minute:0};}
+function pDDT(dd,dt){if(!dd)return null;var p=String(dd).split("-").map(Number);if(p.length!==3||p.some(isNaN))return null;var t=pKT(dt);return new Date(p[0],p[1]-1,p[2],t.hour,t.minute,0,0);}
+function toKT(date){var h=date.getHours(),ap=h>=12?"오후":"오전",hh=h%12||12;return ap+" "+p2(hh)+":"+p2(date.getMinutes());}
+function fDD(task){var d=pDDT(task.dueDate,task.dueTime);if(!d)return"-";return d.getFullYear()+"."+p2(d.getMonth()+1)+"."+p2(d.getDate())+" "+(task.dueTime||"").trim();}
+function nTask(r,i){var cr=r&&r.createdAt?new Date(r.createdAt):new Date();var ca=isNaN(cr.getTime())?new Date().toISOString():cr.toISOString();var pr=["\uc0c1","\uc911","\ud558"].includes(r&&r.priority)?r.priority:"\uc911";var st=SL.includes(r&&r.status)?r.status:"\ubbf8\ucc29\uc218";var ch=CL.includes(r&&r.channel)?r.channel:"\uae30\ud0c0";return{id:r&&r.id?String(r.id):"task_"+Date.now()+"_"+i,name:String((r&&r.name)||"").trim(),channel:ch,dueDate:r&&typeof r.dueDate==="string"?r.dueDate:"",dueTime:r&&typeof r.dueTime==="string"?r.dueTime:"",priority:pr,status:st,description:r&&typeof r.description==="string"?r.description:"",createdAt:ca};}
+function nRpt(r,i,tp){var sa=r&&r.savedAt?new Date(r.savedAt):new Date();var sf=isNaN(sa.getTime())?new Date().toISOString():sa.toISOString();return{id:r&&r.id?String(r.id):tp+"_"+Date.now()+"_"+i,periodKey:String((r&&r.periodKey)||""),title:String((r&&r.title)||""),content:String((r&&r.content)||""),savedAt:sf,savedAtText:r&&r.savedAtText?String(r.savedAtText):new Date(sf).toLocaleString("ko-KR")};}
+function loadS(){tasks=sArr(localStorage.getItem(SK)).map(nTask).filter(function(t){return t.name;});wHist=sArr(localStorage.getItem(WK)).map(function(r,i){return nRpt(r,i,"weekly");});mHist=sArr(localStorage.getItem(MK)).map(function(r,i){return nRpt(r,i,"monthly");});}
+function saveT(){localStorage.setItem(SK,JSON.stringify(tasks));}
+function saveWH(){localStorage.setItem(WK,JSON.stringify(wHist));}
+function saveMH(){localStorage.setItem(MK,JSON.stringify(mHist));}
+function iCW(t,s,e){var d=new Date(t.createdAt);return !isNaN(d)&&d>=s&&d<=e;}
+function iDW(t,s,e){var d=pDDT(t.dueDate,t.dueTime);return !!d&&d>=s&&d<=e;}
+function iRW(t,s,e){return iCW(t,s,e)||iDW(t,s,e);}
+function isOD(t){if(t.status==="완료")return false;var d=pDDT(t.dueDate,t.dueTime);return !!d&&d.getTime()<Date.now();}
+function isDS(t){if(t.status==="완료")return false;var d=pDDT(t.dueDate,t.dueTime);if(!d)return false;var nw=new Date();return d>=nw&&d<=aD(nw,3);}
+function uGrp(t){if(t.status==="완료")return 4;if(isOD(t))return 0;if(isDS(t))return 1;var d=pDDT(t.dueDate,t.dueTime);return d?2:3;}
+function cSco(t){if(t.status==="완료")return -1;var im=t.priority==="상"?3:t.priority==="중"?2:1,sw=t.status==="진행중"?2:t.status==="대기"?1.5:1;var due=pDDT(t.dueDate,t.dueTime);var u=0;if(!due){u=t.status==="진행중"?2:0;}else{var df=Math.floor((sod(due)-sod(new Date()))/86400000);if(df<0)u=6;else if(df===0)u=5;else if(df<=2)u=4;else if(df<=5)u=3;else if(df<=10)u=2;else if(df<=30)u=1;}return im*u*sw;}
+function sortT(list){return Array.from(list).sort(function(a,b){var u=uGrp(a)-uGrp(b);if(u!==0)return u;var pv={"상":1,"중":2,"하":3},p=(pv[a.priority]||9)-(pv[b.priority]||9);if(p!==0)return p;var dA=pDDT(a.dueDate,a.dueTime),dB=pDDT(b.dueDate,b.dueTime);var ta=dA?dA.getTime():Number.MAX_SAFE_INTEGER,tb=dB?dB.getTime():Number.MAX_SAFE_INTEGER;if(ta!==tb)return ta-tb;return new Date(b.createdAt)-new Date(a.createdAt);});}
+function gPB(s){if(s>=15)return{cls:"score-critical",label:"CRITICAL"};if(s>=9)return{cls:"score-urgent",label:"URGENT"};if(s>=6)return{cls:"score-watch",label:"WATCH"};return{cls:"score-low",label:"LOW"};}
+function initDUI(){var hs=$("dueHour"),ms=$("dueMin");hs.innerHTML="";for(var h=0;h<=24;h++){var o=document.createElement("option");o.value=String(h);o.textContent=p2(h);hs.appendChild(o);}ms.innerHTML="";for(var m=0;m<60;m+=5){var o2=document.createElement("option");o2.value=String(m);o2.textContent=p2(m);ms.appendChild(o2);}$("ampmAM").addEventListener("click",function(){ampm="오전";updAP();});$("ampmPM").addEventListener("click",function(){ampm="오후";updAP();});}
+function updAP(){$("ampmAM").classList.toggle("active",ampm==="오전");$("ampmPM").classList.toggle("active",ampm==="오후");}
+function getDTV(){var h=parseInt($("dueHour").value)||0,m=parseInt($("dueMin").value)||0;var dh=h<=12?h:(h%12||12);return ampm+" "+p2(dh)+":"+p2(m);}
+function setDTUI(dt){if(!dt){$("dueHour").value="0";$("dueMin").value="0";ampm="오전";updAP();return;}var t=pKT(dt);$("dueHour").value=String(t.hour);$("dueMin").value=String(Math.round(t.minute/5)*5%60);ampm=t.hour>=12?"오후":"오전";updAP();}
+function setAP(pr){sPri=pr;document.querySelectorAll(".priority-btn").forEach(function(b){b.classList.remove("active","high","mid","low");if(b.dataset.priority===pr){b.classList.add("active");b.classList.add(pr==="상"?"high":pr==="중"?"mid":"low");}});}
+function resetF(){$("editId").value="";$("taskName").value="";$("taskChannel").value="웍스";$("taskStatus").value="미착수";$("taskDesc").value="";$("taskDueDate").value="";$("dueHour").value="0";$("dueMin").value="0";ampm="오전";updAP();setAP("중");$("saveBtn").textContent="업무 저장";}
+function fillF(t){$("editId").value=t.id;$("taskName").value=t.name;$("taskChannel").value=t.channel;$("taskStatus").value=t.status;$("taskDesc").value=t.description||"";$("taskDueDate").value=t.dueDate||"";setDTUI(t.dueTime);setAP(t.priority);$("saveBtn").textContent="수정 저장";setTab("home");window.scrollTo({top:0,behavior:"smooth"});}
+function upsert(){var nm=$("taskName").value.trim();if(!nm){$("taskName").focus();return;}var ei=$("editId").value,dd=$("taskDueDate").value,dt=dd?getDTV():"";var task={id:ei||"task_"+Date.now(),name:nm,channel:$("taskChannel").value,dueDate:dd,dueTime:dt,priority:sPri,status:$("taskStatus").value,description:$("taskDesc").value.trim(),createdAt:ei?(tasks.find(function(x){return x.id===ei;})||{createdAt:new Date().toISOString()}).createdAt:new Date().toISOString()};var idx=tasks.findIndex(function(x){return x.id===task.id;});if(idx>=0)tasks[idx]=task;else tasks.unshift(task);saveT();resetF();renderAll();}
+function updSt(id,st){var t=tasks.find(function(x){return x.id===id;});if(!t)return;t.status=SL.includes(st)?st:t.status;saveT();renderAll();}
+function delTask(id){if(!confirm("삭제하시겠습니까?"))return;tasks=tasks.filter(function(t){return t.id!==id;});saveT();renderAll();}
+function openDM(id){var t=tasks.find(function(x){return x.id===id;});if(!t)return;$("detailTaskId").value=t.id;$("detailTaskName").value=t.name;$("detailTaskDesc").value=t.description||"";$("detailModalSub").textContent=t.channel+" · "+fDD(t);$("detailModal").classList.add("open");}
+function closeDM(){$("detailModal").classList.remove("open");}
+function saveDM(){var id=$("detailTaskId").value,t=tasks.find(function(x){return x.id===id;});if(!t)return;t.description=$("detailTaskDesc").value.trim();saveT();closeDM();renderAll();}
+function gRT(tp,rng){if(tp==="weekly")return rng.start.getFullYear()+"."+p2(rng.start.getMonth()+1)+"."+p2(rng.start.getDate())+" ~ "+rng.end.getFullYear()+"."+p2(rng.end.getMonth()+1)+"."+p2(rng.end.getDate());return rng.start.getFullYear()+"년 "+(rng.start.getMonth()+1)+"월";}
+function gPK(tp,rng){if(tp==="weekly")return rng.start.getFullYear()+"-"+p2(rng.start.getMonth()+1)+"-"+p2(rng.start.getDate())+"_"+rng.end.getFullYear()+"-"+p2(rng.end.getMonth()+1)+"-"+p2(rng.end.getDate());return rng.start.getFullYear()+"-"+p2(rng.start.getMonth()+1);}
+function genRC(tp,rng,list){var ttl=gRT(tp,rng),nw=new Date().toLocaleString("ko-KR");if(!list.length)return "[기간] "+ttl+"\n[작성일시] "+nw+"\n[내용]\n해당 기간 관련 업무가 없습니다.";var lines=list.map(function(t,i){return (i+1)+". "+t.name+" ["+t.status+"]";});return "[기간] "+ttl+"\n[작성일시] "+nw+"\n\n"+lines.join("\n");}
+function openRM(tp){var rng=tp==="weekly"?gWR(wOff):gMR(mOff),ttl=gRT(tp,rng),pk=gPK(tp,rng);var list=sortT(tasks.filter(function(t){return iRW(t,rng.start,rng.end);}));var hist=tp==="weekly"?wHist:mHist,ex=null;for(var i=0;i<hist.length;i++){if(hist[i].periodKey===pk){ex=hist[i];break;}}$("reportType").value=tp;$("reportPeriodKey").value=pk;$("reportPeriodLabel").value=ttl;$("reportModalTitle").textContent=tp==="weekly"?"주간 리포트 작성/수정":"월간 리포트 작성/수정";$("reportModalSub").textContent=ex?("기존 저장본 있음 — 마지막 저장: "+ex.savedAtText):"새 리포트를 작성합니다.";$("reportContent").value=ex?ex.content:genRC(tp,rng,list);$("reportModal").classList.add("open");}
+function closeRM(){$("reportModal").classList.remove("open");}
+function saveRM(){var tp=$("reportType").value,pk=$("reportPeriodKey").value,ttl=$("reportPeriodLabel").value,cont=$("reportContent").value.trim();if(!tp||!pk)return;if(!cont){alert("내용을 입력해 주세요.");$("reportContent").focus();return;}var nw=new Date(),sa=nw.toISOString(),sat=nw.toLocaleString("ko-KR");var isW=tp==="weekly",hist=isW?wHist:mHist,lbl=isW?"주간 리포트":"월간 리포트";var ei=-1;for(var i=0;i<hist.length;i++){if(hist[i].periodKey===pk){ei=i;break;}}if(ei>=0){if(hist[ei].content.trim()===cont){alert("변경 내용이 없습니다");return;}hist[ei]=Object.assign({},hist[ei],{title:ttl,content:cont,savedAt:sa,savedAtText:sat});}else{hist.unshift({id:tp+"_"+Date.now(),periodKey:pk,title:ttl,content:cont,savedAt:sa,savedAtText:sat});}if(isW)saveWH();else saveMH();closeRM();renderAll();alert(lbl+" 저장되었습니다.");}
+function delWR(id){if(!confirm("리포트를 삭제하시겠습니까?"))return;wHist=wHist.filter(function(r){return r.id!==id;});saveWH();renderWP();}
+function delMR(id){if(!confirm("리포트를 삭제하시겠습니까?"))return;mHist=mHist.filter(function(r){return r.id!==id;});saveMH();renderMP();}
+function togExp(tp,id){var s=tp==="weekly"?expW:expM;if(s.has(id))s.delete(id);else s.add(id);if(tp==="weekly")renderWH();else renderMH();}
+function rSL(cid,list,kind){var el=$(cid);if(!el)return;if(!list.length){el.innerHTML='<div class="empty">데이터 없음</div>';return;}el.innerHTML=list.map(function(t){if(kind==="alert"){var due=pDDT(t.dueDate,t.dueTime),diff=due?Math.floor((sod(due)-sod(new Date()))/86400000):null,bc="mini-blue",bl="D-DAY";if(diff===null){bc="mini-blue";bl="N/A";}else if(diff<0){bc="mini-red";bl="D+"+Math.abs(diff);}else if(diff>0){bc="mini-orange";bl="D-"+diff;}return '<div class="list-item"><span class="mini-badge '+bc+'">'+esc(bl)+'</span><div><div class="task-name">'+esc(t.name)+'</div><div class="task-meta">'+esc(t.channel)+' · '+esc(fDD(t))+'</div></div><span class="status-badge st-'+esc(t.status)+'">'+esc(t.status)+'</span></div>';}var sc=cSco(t),bd=gPB(sc);return '<div class="list-item"><span class="score-badge '+bd.cls+'">'+esc(bd.label)+'</span><div><div class="task-name">'+esc(t.name)+'</div><div class="task-meta">'+esc(t.channel)+' · '+esc(fDD(t))+'</div></div><button class="status-badge st-'+esc(t.status)+'" data-action="toggle-status" data-id="'+esc(t.id)+'">'+esc(t.status)+'</button></div>';}).join("");}
+function rKPI(){var wr=gWR(0),mr=gMR(0);$("kpiTotal").textContent=tasks.length;$("kpiWeekRelated").textContent=tasks.filter(function(t){return iRW(t,wr.start,wr.end);}).length;$("kpiMonthRelated").textContent=tasks.filter(function(t){return iRW(t,mr.start,mr.end);}).length;$("kpiDone").textContent=tasks.filter(function(t){return t.status==="완료";}).length;$("kpiDoing").textContent=tasks.filter(function(t){return t.status==="진행중";}).length;$("kpiTodo").textContent=tasks.filter(function(t){return t.status==="미착수";}).length;$("kpiHold").textContent=tasks.filter(function(t){return t.status==="대기";}).length;$("kpiDueSoon").textContent=tasks.filter(isDS).length;}
+function rSC(){var bx=$("chartStatus"),lg=$("legendStatus");if(!bx||!lg)return;var ent=["\ubbf8\ucc29\uc218","\uc9c4\ud589\uc911","\ub300\uae30","\uc644\ub8cc"].map(function(s){return{label:s,value:tasks.filter(function(t){return t.status===s;}).length,color:SC[s]};});var tot=ent.reduce(function(s,e){return s+e.value;},0);if(!tot){bx.innerHTML='<div class="chart-empty">데이터 없음</div>';lg.innerHTML="";return;}var cx=110,cy=110,r=72,in2=42,cur=-Math.PI/2;var paths=ent.filter(function(e){return e.value>0;}).map(function(e){var ang=(e.value/tot)*Math.PI*2,sx=cx+r*Math.cos(cur),sy=cy+r*Math.sin(cur),ex=cx+r*Math.cos(cur+ang),ey=cy+r*Math.sin(cur+ang),lg2=ang>Math.PI?1:0,pa="M "+cx+" "+cy+" L "+sx+" "+sy+" A "+r+" "+r+" 0 "+lg2+" 1 "+ex+" "+ey+" Z";cur+=ang;return '<path d="'+pa+'" fill="'+e.color+'" opacity="0.92"></path>';}).join("");bx.innerHTML='<svg width="240" height="220" viewBox="0 0 240 220" style="max-width:100%;height:auto"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#eef2f7"></circle>'+paths+'<circle cx="'+cx+'" cy="'+cy+'" r="'+in2+'" fill="#fff"></circle><text x="'+cx+'" y="'+( cy-3)+'" text-anchor="middle" font-size="12" fill="#6b7280" font-weight="700">TOTAL</text><text x="'+cx+'" y="'+( cy+18)+'" text-anchor="middle" font-size="28" fill="#111" font-weight="800">'+tot+'</text></svg>';lg.innerHTML=ent.map(function(e){return '<div class="legend-item"><span class="legend-dot" style="background:'+e.color+'"></span><span>'+esc(e.label)+" "+e.value+'</span></div>';}).join("");}
+function rCC(){var bx=$("chartChannel");if(!bx)return;var ent=CL.map(function(ch,i){return{label:ch,value:tasks.filter(function(t){return t.channel===ch;}).length,color:CC[i%CC.length]};});var mx=Math.max.apply(Math,[1].concat(ent.map(function(e){return e.value;})));var tot=ent.reduce(function(s,e){return s+e.value;},0);if(!tot){bx.innerHTML='<div class="chart-empty">데이터 없음</div>';return;}var W=320,H=220,L=32,R=12,T=16,B=34,cW=W-L-R,cH=H-T-B,gap=14,bw=(cW-gap*(ent.length-1))/ent.length;var gl="";for(var i=0;i<=4;i++){var y=T+(cH/4)*i;gl+='<line x1="'+L+'" y1="'+y+'" x2="'+( W-R)+'" y2="'+y+'" stroke="rgba(60,60,67,0.08)"></line>';}var bars=ent.map(function(e,i){var x=L+i*(bw+gap),h=Math.round((e.value/mx)*(cH-8)),y=T+cH-h;return '<g><rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="8" fill="'+e.color+'" opacity="0.9"></rect><text x="'+( x+bw/2)+'" y="'+( y-6)+'" text-anchor="middle" font-size="11" fill="#4b5563" font-weight="700">'+e.value+'</text><text x="'+( x+bw/2)+'" y="'+( H-10)+'" text-anchor="middle" font-size="11" fill="#6b7280">'+e.label+'</text></g>';}).join("");bx.innerHTML='<svg width="320" height="220" viewBox="0 0 320 220" style="max-width:100%;height:auto">'+gl+bars+'</svg>';}
+function rTC(){var bx=$("chartTrend");if(!bx)return;var lb=[],ct=[];for(var i=6;i>=0;i--){var day=sod(aD(new Date(),-i));lb.push(p2(day.getMonth()+1)+"/"+p2(day.getDate()));ct.push(tasks.filter(function(t){var c=sod(new Date(t.createdAt));return !isNaN(c)&&c.getTime()===day.getTime();}).length);}var tot=ct.reduce(function(s,c){return s+c;},0);if(!tot){bx.innerHTML='<div class="chart-empty">데이터 없음</div>';return;}var W=340,H=220,L=30,R=12,T=18,B=34,cW=W-L-R,cH=H-T-B,mx=Math.max.apply(Math,[1].concat(ct)),sX=lb.length>1?cW/(lb.length-1):cW;var pts=ct.map(function(c,i){return{x:L+i*sX,y:T+cH-(c/mx)*cH,count:c,label:lb[i]};});var lp=pts.map(function(p){return p.x+","+p.y;}).join(" "),ap="M "+L+" "+(T+cH)+" L "+pts.map(function(p){return p.x+" "+p.y;}).join(" L ")+" L "+(L+cW)+" "+(T+cH)+" Z";var gl="";for(var j=0;j<=4;j++){var y=T+(cH/4)*j;gl+='<line x1="'+L+'" y1="'+y+'" x2="'+( W-R)+'" y2="'+y+'" stroke="rgba(60,60,67,0.08)"></line>';}var xl=pts.map(function(p){return '<text x="'+p.x+'" y="'+( H-10)+'" text-anchor="middle" font-size="11" fill="#6b7280">'+p.label+'</text>';}).join(""),dots=pts.map(function(p){return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="3.5" fill="#007aff"></circle><text x="'+p.x+'" y="'+( p.y-8)+'" text-anchor="middle" font-size="11" fill="#4b5563" font-weight="700">'+p.count+'</text></g>';}).join("");bx.innerHTML='<svg width="340" height="220" viewBox="0 0 340 220" style="max-width:100%;height:auto"><defs><linearGradient id="tF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#007aff" stop-opacity="0.18"></stop><stop offset="100%" stop-color="#007aff" stop-opacity="0"></stop></linearGradient></defs>'+gl+'<path d="'+ap+'" fill="url(#tF)"></path><polyline points="'+lp+'" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>'+dots+xl+'</svg>';}
+function rToday(){var list=tasks.map(function(t){return{task:t,score:cSco(t)};}).filter(function(x){return x.score>=2;}).sort(function(a,b){return b.score-a.score;}).slice(0,6).map(function(x){return x.task;});rSL("todayList",list,"today");}
+function rAlerts(){rSL("dueSoonList",sortT(tasks.filter(isDS)).slice(0,5),"alert");rSL("overdueList",sortT(tasks.filter(isOD)).slice(0,5),"alert");}
+function fTasks(){var list=sortT(tasks);if(fSt!=="전체")list=list.filter(function(t){return t.status===fSt;});return list;}
+function rTT(){var tb=$("taskTableBody"),pg=$("taskPagination");if(!tb||!pg)return;var list=fTasks(),tp=Math.max(1,Math.ceil(list.length/rpp));if(curPage>tp)curPage=tp;var st=(curPage-1)*rpp,items=list.slice(st,st+rpp);if(!items.length){tb.innerHTML='<tr><td colspan="9"><div class="empty">업무가 없습니다.</div></td></tr>';}else{tb.innerHTML=items.map(function(t){var cr=new Date(t.createdAt),ct=isNaN(cr)?"-":cr.getFullYear()+"."+p2(cr.getMonth()+1)+"."+p2(cr.getDate()),pc=t.priority==="상"?"priority-high":t.priority==="중"?"priority-mid":"priority-low",rc=t.status==="완료"?"done-row":"";return '<tr class="'+rc+'"><td class="name-cell"><div class="name-ellipsis" title="'+esc(t.name)+'">'+esc(t.name)+'</div></td><td>'+esc(t.channel)+'</td><td>'+esc(fDD(t))+'</td><td><span class="'+pc+'">'+esc(t.priority)+'</span></td><td><select class="inline-select" data-action="status-select" data-id="'+esc(t.id)+'">'+SL.map(function(s){return '<option value="'+esc(s)+'"'+(t.status===s?" selected":"")+'>'+esc(s)+'</option>';}).join("")+'</select></td><td>'+esc(ct)+'</td><td><button class="text-link" data-action="open-detail" data-id="'+esc(t.id)+'">상세</button></td><td><button class="text-link" data-action="edit" data-id="'+esc(t.id)+'">수정</button></td><td><button class="icon-btn" data-action="delete" data-id="'+esc(t.id)+'">✕</button></td></tr>';}).join("");}var ph="",pd=curPage<=1?" disabled":"";ph+='<button class="page-btn"'+pd+' data-page="'+( curPage-1)+'">&lsaquo;</button>';var sp=Math.max(1,curPage-2),ep=Math.min(tp,curPage+2);for(var pg2=sp;pg2<=ep;pg2++)ph+='<button class="page-btn'+(pg2===curPage?" active":"")+' " data-page="'+pg2+'">'+pg2+'</button>';var nd=curPage>=tp?" disabled":"";ph+='<button class="page-btn"'+nd+' data-page="'+( curPage+1)+'">&rsaquo;</button>';ph+='<span class="page-info">'+(list.length?st+1:0)+"-"+Math.min(st+rpp,list.length)+" / "+list.length+'</span>';pg.innerHTML=ph;}
+function rRS(id,tot,dn,dg,wt){var el=$(id);if(!el)return;el.innerHTML='<div class="report-stat"><div class="v">'+tot+'</div><div class="l">전체</div></div><div class="report-stat"><div class="v" style="color:var(--green)">'+dn+'</div><div class="l">완료</div></div><div class="report-stat"><div class="v" style="color:var(--blue)">'+dg+'</div><div class="l">진행중</div></div><div class="report-stat"><div class="v" style="color:var(--purple)">'+wt+'</div><div class="l">대기</div></div>';}
+function rRL(cid,list){var el=$(cid);if(!el)return;if(!list.length){el.innerHTML='<div class="empty">해당 기간 업무 없음</div>';return;}el.innerHTML=list.map(function(t){return '<div class="list-item"><span class="status-badge st-'+esc(t.status)+'">'+esc(t.status)+'</span><div><div class="task-name">'+esc(t.name)+'</div><div class="task-meta">'+esc(t.channel)+' · '+esc(fDD(t))+'</div></div><span class="'+(t.priority==="상"?"priority-high":t.priority==="중"?"priority-mid":"priority-low")+'">'+esc(t.priority)+'</span></div>';}).join("");}
+function renderWH(){var h=$("weeklyHistory");if(!wHist.length){h.innerHTML='<div class="empty">저장된 리포트 없음</div>';return;}h.innerHTML=wHist.map(function(item){var ex=expW.has(item.id);return '<div class="hist-item"><div class="hist-title">'+esc(item.title)+'</div><div class="hist-meta">작성일시: '+esc(item.savedAtText)+'</div><div class="hist-actions"><button class="btn btn-secondary" type="button" data-action="toggle-weekly-report" data-id="'+esc(item.id)+'">'+( ex?"접기":"펼치기")+'</button><button class="btn btn-danger" type="button" data-action="delete-weekly-report" data-id="'+esc(item.id)+'">삭제</button></div>'+(ex?'<div class="hist-content">'+esc(item.content)+'</div>':"")+"</div>";}).join("");}
+function renderMH(){var h=$("monthlyHistory");if(!mHist.length){h.innerHTML='<div class="empty">저장된 리포트 없음</div>';return;}h.innerHTML=mHist.map(function(item){var ex=expM.has(item.id);return '<div class="hist-item"><div class="hist-title">'+esc(item.title)+'</div><div class="hist-meta">작성일시: '+esc(item.savedAtText)+'</div><div class="hist-actions"><button class="btn btn-secondary" type="button" data-action="toggle-monthly-report" data-id="'+esc(item.id)+'">'+( ex?"접기":"펼치기")+'</button><button class="btn btn-danger" type="button" data-action="delete-monthly-report" data-id="'+esc(item.id)+'">삭제</button></div>'+(ex?'<div class="hist-content">'+esc(item.content)+'</div>':"")+"</div>";}).join("");}
+function renderWP(){var rng=gWR(wOff);$("weeklyLabel").textContent=rng.start.getFullYear()+"."+p2(rng.start.getMonth()+1)+"."+p2(rng.start.getDate())+" ~ "+rng.end.getFullYear()+"."+p2(rng.end.getMonth()+1)+"."+p2(rng.end.getDate());$("weeklyNext").disabled=wOff>=0;var list=sortT(tasks.filter(function(t){return iRW(t,rng.start,rng.end);}));rRS("weeklyStats",list.length,list.filter(function(t){return t.status==="완료";}).length,list.filter(function(t){return t.status==="진행중";}).length,list.filter(function(t){return t.status==="대기";}).length);rRL("weeklyTasks",list);renderWH();}
+function renderMP(){var rng=gMR(mOff);$("monthlyLabel").textContent=rng.start.getFullYear()+"년 "+(rng.start.getMonth()+1)+"월";$("monthlyNext").disabled=mOff>=0;var list=sortT(tasks.filter(function(t){return iRW(t,rng.start,rng.end);}));rRS("monthlyStats",list.length,list.filter(function(t){return t.status==="완료";}).length,list.filter(function(t){return t.status==="진행중";}).length,list.filter(function(t){return t.status==="대기";}).length);rRL("monthlyTasks",list);renderMH();}
+function renderAll(){rToday();rAlerts();rKPI();rSC();rCC();rTC();rTT();renderWP();renderMP();}
+function setTab(nm){document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.tab===nm);});document.querySelectorAll(".page").forEach(function(p){p.classList.toggle("active",p.id==="page-"+nm);});if(nm==="tasks")rTT();if(nm==="weekly")renderWP();if(nm==="monthly")renderMP();}
+function cycSt(c){var i=SL.indexOf(c);return SL[(i+1)%SL.length]||"미착수";}
+function bindE(){
+document.querySelectorAll(".priority-btn").forEach(function(b){b.addEventListener("click",function(){setAP(b.dataset.priority);});});
+document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){setTab(t.dataset.tab);});});
+document.querySelectorAll("[data-status-filter]").forEach(function(b){b.addEventListener("click",function(){fSt=b.dataset.statusFilter;curPage=1;document.querySelectorAll("[data-status-filter]").forEach(function(x){x.classList.remove("active");});b.classList.add("active");rTT();});});
+$("rowsPerPage").addEventListener("change",function(e){rpp=Number(e.target.value)||10;curPage=1;rTT();});
+$("saveBtn").addEventListener("click",upsert);
+$("resetBtn").addEventListener("click",resetF);
+$("weeklyPrev").addEventListener("click",function(){wOff--;renderWP();});
+$("weeklyNext").addEventListener("click",function(){if(wOff<0){wOff++;renderWP();}});
+$("monthlyPrev").addEventListener("click",function(){mOff--;renderMP();});
+$("monthlyNext").addEventListener("click",function(){if(mOff<0){mOff++;renderMP();}});
+$("weeklyOpenReport").addEventListener("click",function(){openRM("weekly");});
+$("monthlyOpenReport").addEventListener("click",function(){openRM("monthly");});
+$("reportModalClose").addEventListener("click",closeRM);
+$("reportModalCancel").addEventListener("click",closeRM);
+$("reportModalSave").addEventListener("click",saveRM);
+$("detailModalClose").addEventListener("click",closeDM);
+$("detailModalCancel").addEventListener("click",closeDM);
+$("detailModalSave").addEventListener("click",saveDM);
+$("reportModal").addEventListener("click",function(e){if(e.target.id==="reportModal")closeRM();});
+$("detailModal").addEventListener("click",function(e){if(e.target.id==="detailModal")closeDM();});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeDM();closeRM();}});
+document.body.addEventListener("click",function(e){var t=e.target,act=t&&t.dataset&&t.dataset.action,id=t&&t.dataset&&t.dataset.id;
+if(!act){if(t&&t.dataset&&t.dataset.page){var np=Number(t.dataset.page);if(!isNaN(np)){curPage=np;rTT();}}return;}
+if(act==="toggle-status"&&id){var task=tasks.find(function(x){return x.id===id;});if(!task)return;updSt(id,cycSt(task.status));return;}
+if(act==="edit"&&id){var t2=tasks.find(function(x){return x.id===id;});if(t2)fillF(t2);return;}
+if(act==="delete"&&id){delTask(id);return;}
+if(act==="open-detail"&&id){openDM(id);return;}
+if(act==="toggle-weekly-report"&&id){togExp("weekly",id);return;}
+if(act==="toggle-monthly-report"&&id){togExp("monthly",id);return;}
+if(act==="delete-weekly-report"&&id){delWR(id);return;}
+if(act==="delete-monthly-report"&&id){delMR(id);return;}
+if(t&&t.dataset&&t.dataset.page){var np2=Number(t.dataset.page);if(!isNaN(np2)){curPage=np2;rTT();}}});
+document.body.addEventListener("change",function(e){var t=e.target;if(t&&t.dataset&&t.dataset.action==="status-select")updSt(t.dataset.id,t.value);});
+}
+function tick(){var n=new Date();$("navTime").textContent=p2(n.getHours())+":"+p2(n.getMinutes())+":"+p2(n.getSeconds());}
+function init(){loadS();initDUI();bindE();resetF();tick();setInterval(tick,1000);renderAll();}
+init();
+})();
+</script>
+</body>
+</html>
