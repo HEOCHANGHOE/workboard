@@ -1,10 +1,18 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Work Board v23</title><style>
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Work Board v23
+    </title>
+    <style>
 /* ============================================================
-   WORK BOARD v21.0 — Apple-Inspired Design System
-   Single consolidated CSS — no override layers
+   WORK BOARD v23 - Apple-inspired design system
+   Single-file app: CSS, HTML, and JavaScript are kept together.
    ============================================================ */
 
-/* ─── Design Tokens ─── */
+/* Design tokens: shared colors, surfaces, spacing, radius, and shadows. */
 :root {
   /* Apple System Colors */
   --blue: #0071e3;
@@ -52,7 +60,7 @@
   --shadow-pop: 0 4px 20px rgba(0,0,0,0.12);
 }
 
-/* ─── Reset & Base ─── */
+/* Reset and base typography. */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
 body {
@@ -67,11 +75,11 @@ button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: none; }
 .hidden { display: none !important; }
 
-/* ─── Layout ─── */
+/* Global layout wrapper. */
 .wrap { max-width: 1480px; margin: 0 auto; padding: 20px; }
 @media (max-width: 760px) { .wrap { padding: 14px; } }
 
-/* ─── Navigation ─── */
+/* Top navigation. */
 .nav {
   position: sticky;
   top: 0;
@@ -109,7 +117,7 @@ button { cursor: pointer; border: none; }
   background: var(--blue-bg);
 }
 
-/* ─── Tab Bar ─── */
+/* Tab navigation. */
 .tabs {
   position: sticky;
   top: 52px;
@@ -144,11 +152,11 @@ button { cursor: pointer; border: none; }
   font-weight: 600;
 }
 
-/* ─── Page ─── */
+/* Page visibility states. */
 .page { display: none; }
 .page.active { display: block; }
 
-/* ─── Grid ─── */
+/* Reusable grid layouts. */
 .grid-2 {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
@@ -157,7 +165,7 @@ button { cursor: pointer; border: none; }
 }
 @media (max-width: 980px) { .grid-2 { grid-template-columns: 1fr; } }
 
-/* ─── Card ─── */
+/* Card containers. */
 .card {
   background: var(--card);
   border-radius: var(--r22);
@@ -183,7 +191,7 @@ button { cursor: pointer; border: none; }
 }
 .card-body { padding: 22px; }
 
-/* ─── Form ─── */
+/* Form controls. */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2190,131 +2198,1189 @@ body::before {
 
 .textarea.compact { min-height: 76px; }
 
-</style></head><body>  <nav class="nav">
-    <div class="nav-title">Work Board</div>
-    <div class="nav-right">
-      <div id="navTime" class="nav-time"></div>
-      <div class="nav-live">LIVE</div>
-    </div>
-  </nav>
-  <!-- 근무 타임바 -->
-  <div class="wt-bar" id="wtBar">
-    <div class="wt-clock-wrap">
-      <div class="wt-live-time" id="wtLiveTime">--:--:--</div>
-      <div class="wt-live-date" id="wtLiveDate"></div>
-    </div>
-    <div class="wt-divider"></div>
-    <div class="wt-status-wrap">
-      <div class="wt-status-row">
-        <span class="wt-label">출근</span>
-        <span class="wt-val editable" id="wtInTime" title="클릭하면 수정" onclick="wtOpenEditPop('in',this)">-</span>
-        <span class="wt-label" style="margin-left:8px">퇴근</span>
-        <span class="wt-val editable" id="wtOutTime" title="클릭하면 수정" onclick="wtOpenEditPop('out',this)">-</span>
-        <span class="wt-label wt-live-extra" id="wtLiveWorkedLabel" style="margin-left:8px">근무중</span>
-        <span class="wt-val wt-live-extra" id="wtLiveWorked" >-</span>
-        <span class="wt-label wt-live-extra" id="wtLiveOtLabel" style="margin-left:8px">초과</span>
-        <span class="wt-val wt-live-extra" id="wtLiveOt">-</span>
-        <span class="wt-remain" id="wtRemain" style="margin-left:8px"></span>
+</style>
+  </head>
+  <body>
+    <!-- Top navigation: title, live status, and current time. -->
+    <nav class="nav">
+      <div class="nav-title">
+        Work Board
       </div>
-      <div class="wt-status-row">
-        <span class="wt-label">일반</span>
-        <span class="wt-val" id="wtRegular">-</span>
-        <span class="wt-label" style="margin-left:8px">초과</span>
-        <span class="wt-val" id="wtOvertime">-</span>
-        <span class="wt-label" style="margin-left:8px">총</span>
-        <span class="wt-val" id="wtTotal">-</span>
+      <div class="nav-right">
+        <div id="navTime" class="nav-time">
+        </div>
+        <div class="nav-live">
+          LIVE
+        </div>
       </div>
-      <div class="wt-progress-wrap">
-        <div class="wt-progress-bg"><div class="wt-progress-fill" id="wtProgressFill" style="width:0%"></div></div>
+    </nav>
+    <!-- 근무 타임바 -->
+    <div class="wt-bar" id="wtBar">
+      <div class="wt-clock-wrap">
+        <div class="wt-live-time" id="wtLiveTime">
+          --:--:--
+        </div>
+        <div class="wt-live-date" id="wtLiveDate">
+        </div>
+      </div>
+      <div class="wt-divider">
+      </div>
+      <div class="wt-status-wrap">
+        <div class="wt-status-row">
+          <span class="wt-label">
+            출근
+          </span>
+          <span class="wt-val editable" id="wtInTime" title="클릭하면 수정" onclick="wtOpenEditPop('in',this)">
+            -
+          </span>
+          <span class="wt-label" style="margin-left:8px">
+            퇴근
+          </span>
+          <span class="wt-val editable" id="wtOutTime" title="클릭하면 수정" onclick="wtOpenEditPop('out',this)">
+            -
+          </span>
+          <span class="wt-label wt-live-extra" id="wtLiveWorkedLabel" style="margin-left:8px">
+            근무중
+          </span>
+          <span class="wt-val wt-live-extra" id="wtLiveWorked" >
+            -
+          </span>
+          <span class="wt-label wt-live-extra" id="wtLiveOtLabel" style="margin-left:8px">
+            초과
+          </span>
+          <span class="wt-val wt-live-extra" id="wtLiveOt">
+            -
+          </span>
+          <span class="wt-remain" id="wtRemain" style="margin-left:8px">
+          </span>
+        </div>
+        <div class="wt-status-row">
+          <span class="wt-label">
+            일반
+          </span>
+          <span class="wt-val" id="wtRegular">
+            -
+          </span>
+          <span class="wt-label" style="margin-left:8px">
+            초과
+          </span>
+          <span class="wt-val" id="wtOvertime">
+            -
+          </span>
+          <span class="wt-label" style="margin-left:8px">
+            총
+          </span>
+          <span class="wt-val" id="wtTotal">
+            -
+          </span>
+        </div>
+        <div class="wt-progress-wrap">
+          <div class="wt-progress-bg">
+            <div class="wt-progress-fill" id="wtProgressFill" style="width:0%">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wt-btn-group">
+        <button class="btn-ci" id="btnCI" onclick="wtCheckin()">
+          출근
+        </button>
+        <button class="btn-co" id="btnCO" onclick="wtCheckout()" disabled>
+          퇴근
+        </button>
       </div>
     </div>
-    <div class="wt-btn-group">
-      <button class="btn-ci" id="btnCI" onclick="wtCheckin()">출근</button>
-      <button class="btn-co" id="btnCO" onclick="wtCheckout()" disabled>퇴근</button>
+    <!-- 출퇴근 시간 수정 팝오버 -->
+    <div class="wt-edit-pop" id="wtEditPop">
+      <label id="wtEditPopLabel">
+        출근 시간 수정
+      </label>
+      <input type="time" id="wtEditPopTime">
+      <div class="wt-edit-pop-btns">
+        <button class="wt-pop-cancel" onclick="wtCloseEditPop()">
+          취소
+        </button>
+        <button class="wt-pop-save" onclick="wtSaveEditPop()">
+          저장
+        </button>
+      </div>
     </div>
-  </div>
-  <!-- 출퇴근 시간 수정 팝오버 -->
-  <div class="wt-edit-pop" id="wtEditPop">
-    <label id="wtEditPopLabel">출근 시간 수정</label>
-    <input type="time" id="wtEditPopTime">
-    <div class="wt-edit-pop-btns">
-      <button class="wt-pop-cancel" onclick="wtCloseEditPop()">취소</button>
-      <button class="wt-pop-save" onclick="wtSaveEditPop()">저장</button>
+    <!-- Main tabs: dashboard, task list, reports, and work management. -->
+    <div class="tabs">
+      <button class="tab active" data-tab="home">
+        홈
+      </button>
+      <button class="tab" data-tab="tasks">
+        업무 목록
+      </button>
+      <button class="tab" data-tab="weekly">
+        주간 리포트
+      </button>
+      <button class="tab" data-tab="monthly">
+        월간 리포트
+      </button>
+      <button class="tab" data-tab="work">
+        근무관리
+      </button>
     </div>
-  </div>  <div class="tabs">    <button class="tab active" data-tab="home">홈</button>    <button class="tab" data-tab="tasks">업무 목록</button>    <button class="tab" data-tab="weekly">주간 리포트</button>    <button class="tab" data-tab="monthly">월간 리포트</button>
-    <button class="tab" data-tab="work">근무관리</button>  </div>  <div class="wrap">    <section class="page active" id="page-home">      <div class="grid-2">        <div class="card">          <div class="card-head"><div class="card-title">New Task</div></div>          <div class="card-body">            <input type="hidden" id="editId" />            <div class="helper-text" style="margin-top:0; margin-bottom:14px;">업무 생성은 빠르게 등록하고, 프로젝트/성과/시사점은 업무 관리에서 보강합니다.</div>            <div class="field">              <label class="label" for="taskName">업무명</label>              <input id="taskName" class="input" type="text" placeholder="업무 내용을 입력하세요" />            </div>            <div class="form-grid">              <div class="field">                <label class="label" for="taskChannel">채널</label>                <select id="taskChannel" class="select">                  <option value="웍스">웍스</option>                  <option value="메일">메일</option>                  <option value="전화">전화</option>                  <option value="회의">회의</option>                  <option value="구두">구두</option>                  <option value="기타">기타</option>                </select>              </div>              <div class="field">                <label class="label" for="taskStatus">상태</label>                <select id="taskStatus" class="select">                  <option value="미진행">미진행</option>                  <option value="진행중">진행중</option>                  <option value="대기">대기</option>                  <option value="완료">완료</option>                </select>              </div>            </div>            <div class="field">              <label class="label">업무 우선도</label>              <div class="form-grid">                <div class="field" style="margin-bottom:0;">                  <label class="label" for="taskImpact">영향도</label>                  <select id="taskImpact" class="select">                    <option value="1">낮음</option>                    <option value="2" selected>보통</option>                    <option value="3">높음</option>                  </select>                </div>                <div class="field" style="margin-bottom:0;">                  <label class="label" for="taskUrgency">긴급도</label>                  <select id="taskUrgency" class="select">                    <option value="1">낮음</option>                    <option value="2" selected>보통</option>                    <option value="3">높음</option>                  </select>                </div>                <div class="field" style="margin-bottom:0;">                  <label class="label" for="taskLinkage">연결도</label>                  <select id="taskLinkage" class="select">                    <option value="1" selected>낮음</option>                    <option value="2">보통</option>                    <option value="3">높음</option>                  </select>                </div>                <div class="field" style="margin-bottom:0;">                  <label class="label" for="taskPriorityPreview">결과</label>                  <input id="taskPriorityPreview" class="input" type="text" value="MEDIUM · 5" readonly />                </div>              </div>            </div>            <div class="field">              <label class="label" for="taskDueDate">마감일 / 시간</label>              <div class="date-time-wrap">                <input id="taskDueDate" class="input" type="date" />                <div class="time-row">                  <button type="button" id="taskAmpm" class="ampm-btn active-am">오전</button>                  <select id="taskHour" class="select"></select>                  <select id="taskMinute" class="select"></select>                </div>              </div>            </div>            <div class="field">              <label class="label" for="taskDesc">간단 메모</label>              <textarea id="taskDesc" class="textarea" placeholder="업무를 바로 이해할 정도로만 간단히 적습니다"></textarea>            </div>            <div class="btn-row">              <button type="button" class="btn btn-primary" id="saveBtn">업무 저장</button>              <button type="button" class="btn btn-secondary" id="resetBtn">초기화</button>            </div>          </div>        </div>        <div>          <div class="card">            <div class="card-head"><div class="card-title">Today's Priority</div></div>            <div class="list-box" id="todayList"></div>          </div>          <div class="grid-2" style="grid-template-columns: 1fr 1fr;">            <div class="card" style="margin-bottom:0;">              <div class="card-head"><div class="card-title">Due Soon</div></div>              <div class="list-box" id="dueSoonList"></div>            </div>            <div class="card" style="margin-bottom:0;">              <div class="card-head"><div class="card-title">Overdue</div></div>              <div class="list-box" id="overdueList"></div>            </div>          </div>        </div>      </div>      <div class="card">        <div class="card-head"><div class="card-title">Dashboard</div></div>        <div class="kpi-grid">          <div class="kpi blue"><div class="kpi-label">전체 업무</div><div class="kpi-value" id="kpiTotal">0</div></div>          <div class="kpi orange"><div class="kpi-label">이번주 관련 업무</div><div class="kpi-value" id="kpiWeekRelated">0</div></div>          <div class="kpi purple"><div class="kpi-label">이번달 관련 업무</div><div class="kpi-value" id="kpiMonthRelated">0</div></div>          <div class="kpi green"><div class="kpi-label">완료</div><div class="kpi-value" id="kpiDone">0</div></div>          <div class="kpi blue"><div class="kpi-label">진행중</div><div class="kpi-value" id="kpiDoing">0</div></div>          <div class="kpi gray"><div class="kpi-label">미진행</div><div class="kpi-value" id="kpiTodo">0</div></div>          <div class="kpi purple"><div class="kpi-label">대기</div><div class="kpi-value" id="kpiHold">0</div></div>          <div class="kpi red"><div class="kpi-label">마감임박</div><div class="kpi-value" id="kpiDueSoon">0</div></div>        </div>        <div class="chart-grid">          <div class="chart-card">            <div class="chart-title">STATUS DISTRIBUTION</div>            <div class="mini-tab-row" id="statusTabRow"><button class="mini-tab active" data-status-chart="day">일</button><button class="mini-tab" data-status-chart="week">주</button><button class="mini-tab" data-status-chart="month">월</button><button class="mini-tab" data-status-chart="total">Total</button></div>            <div class="chart-box" id="chartStatus"></div>            <div class="legend" id="legendStatus"></div>          </div>          <div class="chart-card">            <div class="chart-title">CHANNEL COUNTS</div>            <div class="mini-tab-row" id="channelTabRow"><button class="mini-tab active" data-channel-chart="week">주</button><button class="mini-tab" data-channel-chart="month">월</button><button class="mini-tab" data-channel-chart="total">Total</button></div>            <div class="chart-box" id="chartChannel"></div>          </div>          <div class="chart-card">            <div class="chart-title">LAST 7 DAYS REGISTRATION TREND</div>            <div class="mini-tab-row" id="trendTabRow"><button class="mini-tab active" data-trend-chart="7d">7일</button><button class="mini-tab" data-trend-chart="30d">30일</button><button class="mini-tab" data-trend-chart="1y">1년</button><button class="mini-tab" data-trend-chart="all">Total</button></div>            <div class="chart-box" id="chartTrend"></div>          </div>        </div>      </div>      <div class="card">        <div class="card-head"><div class="card-title">Career Overview</div></div>        <div class="career-grid">          <div class="career-card"><div class="career-label">프로젝트</div><div class="career-value" id="careerProjectCount">0</div><div class="career-sub">업무에 연결된 프로젝트 수</div></div>          <div class="career-card"><div class="career-label">성과 기록</div><div class="career-value" id="careerOutcomeCount">0</div><div class="career-sub">성과가 남은 업무 수</div></div>          <div class="career-card"><div class="career-label">시사점 기록</div><div class="career-value" id="careerLearningCount">0</div><div class="career-sub">시사점이 남은 업무 수</div></div>        </div>        <div style="padding:0 20px 20px;">          <div class="chart-card" style="min-height:auto;">            <div class="chart-title">Career Notes</div>            <div class="career-note" id="careerSummary"></div>          </div>        </div>      </div>    </section>    <section class="page" id="page-tasks">      <div class="card">        <div class="filter-row">          <div class="pills" id="statusFilters">            <button class="pill active" data-status-filter="전체">전체</button>            <button class="pill" data-status-filter="미진행">미진행</button>            <button class="pill" data-status-filter="진행중">진행중</button>            <button class="pill" data-status-filter="대기">대기</button>            <button class="pill" data-status-filter="완료">완료</button>          </div>          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">            <span style="font-size:12px; color: var(--text3);">프로젝트</span>            <select id="projectFilter" class="select" style="width:220px; padding:8px 10px;">              <option value="전체">전체 프로젝트</option>            </select>            <span id="taskCountSummary" style="font-size:12px; color: var(--text3);"></span>          </div>        </div>        <div class="notice">업무 생성은 빠르게 등록하고, 업무 목록에서는 프로젝트 단위로 묶어서 진행 상태와 우선순위를 관리합니다.</div>        <div class="table-wrap">          <table class="table">            <thead>              <tr>                <th>프로젝트 / 업무</th>                <th>채널</th>                <th>마감일/시간</th>                <th>업무우선도</th>                <th>상태</th>                <th>등록일</th>                <th>관리</th>                <th>빠른수정</th>                <th>삭제</th>              </tr>            </thead>            <tbody id="taskTableBody"></tbody>          </table>        </div>        <div class="pagination" id="taskPagination"></div>      </div>    </section>    <section class="page" id="page-weekly">      <div class="card">        <div class="report-head">          <div class="report-nav">            <button class="report-nav-btn" id="weeklyPrev">‹</button>            <div class="report-label" id="weeklyLabel"></div>            <button class="report-nav-btn" id="weeklyNext">›</button>          </div>          <button class="btn btn-secondary" id="weeklyOpenReport">리포트 작성/수정</button>        </div>        <div class="report-stats" id="weeklyStats"></div>        <div class="card-head"><div class="card-title">Weekly Tasks</div></div>        <div class="list-box" id="weeklyTasks"></div>      </div>      <div class="card">        <div class="card-head"><div class="card-title">Saved Weekly Reports</div></div>        <div id="weeklyHistory"></div>      </div>    </section>    <section class="page" id="page-monthly">      <div class="card">        <div class="report-head">          <div class="report-nav">            <button class="report-nav-btn" id="monthlyPrev">‹</button>            <div class="report-label" id="monthlyLabel"></div>            <button class="report-nav-btn" id="monthlyNext">›</button>          </div>          <button class="btn btn-secondary" id="monthlyOpenReport">리포트 작성/수정</button>        </div>        <div class="report-stats" id="monthlyStats"></div>        <div class="card-head"><div class="card-title">Monthly Tasks</div></div>        <div class="list-box" id="monthlyTasks"></div>      </div>      <div class="card">        <div class="card-head"><div class="card-title">Saved Monthly Reports</div></div>        <div id="monthlyHistory"></div>      </div>    </section>
-<section class="page" id="page-work">
-  <div class="wm-tabs">
-    <button class="wm-tab-btn active" data-wm="dash">대시보드</button>
-    <button class="wm-tab-btn" data-wm="cal">달력</button>
-    <button class="wm-tab-btn" data-wm="year">연간통계</button>
-  </div>
-  <div class="wm-panel active" id="wm-dash">
-    <div class="wm-stat-grid">
-      <div class="wm-stat-card"><div class="wm-stat-label">이번달 근무일</div><div class="wm-stat-val" id="wm-mdays">0</div><div class="wm-stat-sub">일</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">이번달 일반 근무시간</div><div class="wm-stat-val" id="wm-mhours">0h</div><div class="wm-stat-sub">소정근무 인정시간</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">이번달 초과근무</div><div class="wm-stat-val" id="wm-mot" style="color:var(--orange)">0h</div><div class="wm-stat-sub">08:30 이전 + 17:30 이후</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">이번달 총 근무시간</div><div class="wm-stat-val" id="wm-mtotal">0h</div><div class="wm-stat-sub">일반근무 + 초과근무</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">연차 사용/잔여</div><div class="wm-stat-val" id="wm-leave">0/16</div><div class="wm-stat-sub">일</div></div>
+    <!-- Main content wrapper. -->
+    <div class="wrap">
+      <!-- Home page: quick task entry, priority lists, KPIs, and charts. -->
+      <section class="page active" id="page-home">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">
+                New Task
+              </div>
+            </div>
+            <div class="card-body">
+              <input type="hidden" id="editId" />
+              <div class="helper-text" style="margin-top:0; margin-bottom:14px;">
+                업무 생성은 빠르게 등록하고, 프로젝트/성과/시사점은 업무 관리에서 보강합니다.
+              </div>
+              <div class="field">
+                <label class="label" for="taskName">
+                  업무명
+                </label>
+                <input id="taskName" class="input" type="text" placeholder="업무 내용을 입력하세요" />
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label class="label" for="taskChannel">
+                    채널
+                  </label>
+                  <select id="taskChannel" class="select">
+                    <option value="웍스">
+                      웍스
+                    </option>
+                    <option value="메일">
+                      메일
+                    </option>
+                    <option value="전화">
+                      전화
+                    </option>
+                    <option value="회의">
+                      회의
+                    </option>
+                    <option value="구두">
+                      구두
+                    </option>
+                    <option value="기타">
+                      기타
+                    </option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="taskStatus">
+                    상태
+                  </label>
+                  <select id="taskStatus" class="select">
+                    <option value="미진행">
+                      미진행
+                    </option>
+                    <option value="진행중">
+                      진행중
+                    </option>
+                    <option value="대기">
+                      대기
+                    </option>
+                    <option value="완료">
+                      완료
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">
+                  업무 우선도
+                </label>
+                <div class="form-grid">
+                  <div class="field" style="margin-bottom:0;">
+                    <label class="label" for="taskImpact">
+                      영향도
+                    </label>
+                    <select id="taskImpact" class="select">
+                      <option value="1">
+                        낮음
+                      </option>
+                      <option value="2" selected>
+                        보통
+                      </option>
+                      <option value="3">
+                        높음
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field" style="margin-bottom:0;">
+                    <label class="label" for="taskUrgency">
+                      긴급도
+                    </label>
+                    <select id="taskUrgency" class="select">
+                      <option value="1">
+                        낮음
+                      </option>
+                      <option value="2" selected>
+                        보통
+                      </option>
+                      <option value="3">
+                        높음
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field" style="margin-bottom:0;">
+                    <label class="label" for="taskLinkage">
+                      연결도
+                    </label>
+                    <select id="taskLinkage" class="select">
+                      <option value="1" selected>
+                        낮음
+                      </option>
+                      <option value="2">
+                        보통
+                      </option>
+                      <option value="3">
+                        높음
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field" style="margin-bottom:0;">
+                    <label class="label" for="taskPriorityPreview">
+                      결과
+                    </label>
+                    <input id="taskPriorityPreview" class="input" type="text" value="MEDIUM · 5" readonly />
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="taskDueDate">
+                  마감일 / 시간
+                </label>
+                <div class="date-time-wrap">
+                  <input id="taskDueDate" class="input" type="date" />
+                  <div class="time-row">
+                    <button type="button" id="taskAmpm" class="ampm-btn active-am">
+                      오전
+                    </button>
+                    <select id="taskHour" class="select">
+                    </select>
+                    <select id="taskMinute" class="select">
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="taskDesc">
+                  간단 메모
+                </label>
+                <textarea id="taskDesc" class="textarea" placeholder="업무를 바로 이해할 정도로만 간단히 적습니다">
+                </textarea>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn btn-primary" id="saveBtn">
+                  업무 저장
+                </button>
+                <button type="button" class="btn btn-secondary" id="resetBtn">
+                  초기화
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">
+                  Today's Priority
+                </div>
+              </div>
+              <div class="list-box" id="todayList">
+              </div>
+            </div>
+            <div class="grid-2" style="grid-template-columns: 1fr 1fr;">
+              <div class="card" style="margin-bottom:0;">
+                <div class="card-head">
+                  <div class="card-title">
+                    Due Soon
+                  </div>
+                </div>
+                <div class="list-box" id="dueSoonList">
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:0;">
+                <div class="card-head">
+                  <div class="card-title">
+                    Overdue
+                  </div>
+                </div>
+                <div class="list-box" id="overdueList">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              Dashboard
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi blue">
+              <div class="kpi-label">
+                전체 업무
+              </div>
+              <div class="kpi-value" id="kpiTotal">
+                0
+              </div>
+            </div>
+            <div class="kpi orange">
+              <div class="kpi-label">
+                이번주 관련 업무
+              </div>
+              <div class="kpi-value" id="kpiWeekRelated">
+                0
+              </div>
+            </div>
+            <div class="kpi purple">
+              <div class="kpi-label">
+                이번달 관련 업무
+              </div>
+              <div class="kpi-value" id="kpiMonthRelated">
+                0
+              </div>
+            </div>
+            <div class="kpi green">
+              <div class="kpi-label">
+                완료
+              </div>
+              <div class="kpi-value" id="kpiDone">
+                0
+              </div>
+            </div>
+            <div class="kpi blue">
+              <div class="kpi-label">
+                진행중
+              </div>
+              <div class="kpi-value" id="kpiDoing">
+                0
+              </div>
+            </div>
+            <div class="kpi gray">
+              <div class="kpi-label">
+                미진행
+              </div>
+              <div class="kpi-value" id="kpiTodo">
+                0
+              </div>
+            </div>
+            <div class="kpi purple">
+              <div class="kpi-label">
+                대기
+              </div>
+              <div class="kpi-value" id="kpiHold">
+                0
+              </div>
+            </div>
+            <div class="kpi red">
+              <div class="kpi-label">
+                마감임박
+              </div>
+              <div class="kpi-value" id="kpiDueSoon">
+                0
+              </div>
+            </div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-title">
+                STATUS DISTRIBUTION
+              </div>
+              <div class="mini-tab-row" id="statusTabRow">
+                <button class="mini-tab active" data-status-chart="day">
+                  일
+                </button>
+                <button class="mini-tab" data-status-chart="week">
+                  주
+                </button>
+                <button class="mini-tab" data-status-chart="month">
+                  월
+                </button>
+                <button class="mini-tab" data-status-chart="total">
+                  Total
+                </button>
+              </div>
+              <div class="chart-box" id="chartStatus">
+              </div>
+              <div class="legend" id="legendStatus">
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">
+                CHANNEL COUNTS
+              </div>
+              <div class="mini-tab-row" id="channelTabRow">
+                <button class="mini-tab active" data-channel-chart="week">
+                  주
+                </button>
+                <button class="mini-tab" data-channel-chart="month">
+                  월
+                </button>
+                <button class="mini-tab" data-channel-chart="total">
+                  Total
+                </button>
+              </div>
+              <div class="chart-box" id="chartChannel">
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">
+                LAST 7 DAYS REGISTRATION TREND
+              </div>
+              <div class="mini-tab-row" id="trendTabRow">
+                <button class="mini-tab active" data-trend-chart="7d">
+                  7일
+                </button>
+                <button class="mini-tab" data-trend-chart="30d">
+                  30일
+                </button>
+                <button class="mini-tab" data-trend-chart="1y">
+                  1년
+                </button>
+                <button class="mini-tab" data-trend-chart="all">
+                  Total
+                </button>
+              </div>
+              <div class="chart-box" id="chartTrend">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              Career Overview
+            </div>
+          </div>
+          <div class="career-grid">
+            <div class="career-card">
+              <div class="career-label">
+                프로젝트
+              </div>
+              <div class="career-value" id="careerProjectCount">
+                0
+              </div>
+              <div class="career-sub">
+                업무에 연결된 프로젝트 수
+              </div>
+            </div>
+            <div class="career-card">
+              <div class="career-label">
+                성과 기록
+              </div>
+              <div class="career-value" id="careerOutcomeCount">
+                0
+              </div>
+              <div class="career-sub">
+                성과가 남은 업무 수
+              </div>
+            </div>
+            <div class="career-card">
+              <div class="career-label">
+                시사점 기록
+              </div>
+              <div class="career-value" id="careerLearningCount">
+                0
+              </div>
+              <div class="career-sub">
+                시사점이 남은 업무 수
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 20px 20px;">
+            <div class="chart-card" style="min-height:auto;">
+              <div class="chart-title">
+                Career Notes
+              </div>
+              <div class="career-note" id="careerSummary">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Task list page: filter and manage tasks by status or project. -->
+      <section class="page" id="page-tasks">
+        <div class="card">
+          <div class="filter-row">
+            <div class="pills" id="statusFilters">
+              <button class="pill active" data-status-filter="전체">
+                전체
+              </button>
+              <button class="pill" data-status-filter="미진행">
+                미진행
+              </button>
+              <button class="pill" data-status-filter="진행중">
+                진행중
+              </button>
+              <button class="pill" data-status-filter="대기">
+                대기
+              </button>
+              <button class="pill" data-status-filter="완료">
+                완료
+              </button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:12px; color: var(--text3);">
+                프로젝트
+              </span>
+              <select id="projectFilter" class="select" style="width:220px; padding:8px 10px;">
+                <option value="전체">
+                  전체 프로젝트
+                </option>
+              </select>
+              <span id="taskCountSummary" style="font-size:12px; color: var(--text3);">
+              </span>
+            </div>
+          </div>
+          <div class="notice">
+            업무 생성은 빠르게 등록하고, 업무 목록에서는 프로젝트 단위로 묶어서 진행 상태와 우선순위를 관리합니다.
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>
+                    프로젝트 / 업무
+                  </th>
+                  <th>
+                    채널
+                  </th>
+                  <th>
+                    마감일/시간
+                  </th>
+                  <th>
+                    업무우선도
+                  </th>
+                  <th>
+                    상태
+                  </th>
+                  <th>
+                    등록일
+                  </th>
+                  <th>
+                    관리
+                  </th>
+                  <th>
+                    빠른수정
+                  </th>
+                  <th>
+                    삭제
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="taskTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="taskPagination">
+          </div>
+        </div>
+      </section>
+      <!-- Weekly report page: review weekly tasks and saved notes. -->
+      <section class="page" id="page-weekly">
+        <div class="card">
+          <div class="report-head">
+            <div class="report-nav">
+              <button class="report-nav-btn" id="weeklyPrev">
+                ‹
+              </button>
+              <div class="report-label" id="weeklyLabel">
+              </div>
+              <button class="report-nav-btn" id="weeklyNext">
+                ›
+              </button>
+            </div>
+            <button class="btn btn-secondary" id="weeklyOpenReport">
+              리포트 작성/수정
+            </button>
+          </div>
+          <div class="report-stats" id="weeklyStats">
+          </div>
+          <div class="card-head">
+            <div class="card-title">
+              Weekly Tasks
+            </div>
+          </div>
+          <div class="list-box" id="weeklyTasks">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              Saved Weekly Reports
+            </div>
+          </div>
+          <div id="weeklyHistory">
+          </div>
+        </div>
+      </section>
+      <!-- Monthly report page: review monthly tasks and saved notes. -->
+      <section class="page" id="page-monthly">
+        <div class="card">
+          <div class="report-head">
+            <div class="report-nav">
+              <button class="report-nav-btn" id="monthlyPrev">
+                ‹
+              </button>
+              <div class="report-label" id="monthlyLabel">
+              </div>
+              <button class="report-nav-btn" id="monthlyNext">
+                ›
+              </button>
+            </div>
+            <button class="btn btn-secondary" id="monthlyOpenReport">
+              리포트 작성/수정
+            </button>
+          </div>
+          <div class="report-stats" id="monthlyStats">
+          </div>
+          <div class="card-head">
+            <div class="card-title">
+              Monthly Tasks
+            </div>
+          </div>
+          <div class="list-box" id="monthlyTasks">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              Saved Monthly Reports
+            </div>
+          </div>
+          <div id="monthlyHistory">
+          </div>
+        </div>
+      </section>
+      <!-- Work management page: check-in/out history and calendar. -->
+      <section class="page" id="page-work">
+        <div class="wm-tabs">
+          <button class="wm-tab-btn active" data-wm="dash">
+            대시보드
+          </button>
+          <button class="wm-tab-btn" data-wm="cal">
+            달력
+          </button>
+          <button class="wm-tab-btn" data-wm="year">
+            연간통계
+          </button>
+        </div>
+        <div class="wm-panel active" id="wm-dash">
+          <div class="wm-stat-grid">
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                이번달 근무일
+              </div>
+              <div class="wm-stat-val" id="wm-mdays">
+                0
+              </div>
+              <div class="wm-stat-sub">
+                일
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                이번달 일반 근무시간
+              </div>
+              <div class="wm-stat-val" id="wm-mhours">
+                0h
+              </div>
+              <div class="wm-stat-sub">
+                소정근무 인정시간
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                이번달 초과근무
+              </div>
+              <div class="wm-stat-val" id="wm-mot" style="color:var(--orange)">
+                0h
+              </div>
+              <div class="wm-stat-sub">
+                08:30 이전 + 17:30 이후
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                이번달 총 근무시간
+              </div>
+              <div class="wm-stat-val" id="wm-mtotal">
+                0h
+              </div>
+              <div class="wm-stat-sub">
+                일반근무 + 초과근무
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                연차 사용/잔여
+              </div>
+              <div class="wm-stat-val" id="wm-leave">
+                0/16
+              </div>
+              <div class="wm-stat-sub">
+                일
+              </div>
+            </div>
+          </div>
+          <div class="wm-chart-title">
+            이번달 일별 근무시간
+          </div>
+          <div style="overflow-x:auto">
+            <div class="wm-bar-chart" id="wmMonthChart" style="min-width:320px">
+            </div>
+          </div>
+          <div class="wm-legend">
+            <span>
+              <span class="wm-legend-dot" style="background:var(--blue)">
+              </span>
+              일반
+            </span>
+            <span>
+              <span class="wm-legend-dot" style="background:var(--orange)">
+              </span>
+              초과근무 하이라이트
+            </span>
+          </div>
+        </div>
+        <div class="wm-panel" id="wm-cal">
+          <div class="wm-cal-nav">
+            <button id="wmPrev">
+              &#8249;
+            </button>
+            <span class="wm-cal-month" id="wmMonthLabel">
+            </span>
+            <button id="wmNext">
+              &#8250;
+            </button>
+          </div>
+          <div class="wm-cal-grid">
+            <div class="wm-cal-hdr" style="color:#ff3b30">
+              일
+            </div>
+            <div class="wm-cal-hdr">
+              월
+            </div>
+            <div class="wm-cal-hdr">
+              화
+            </div>
+            <div class="wm-cal-hdr">
+              수
+            </div>
+            <div class="wm-cal-hdr">
+              목
+            </div>
+            <div class="wm-cal-hdr">
+              금
+            </div>
+            <div class="wm-cal-hdr" style="color:#007aff">
+              토
+            </div>
+          </div>
+          <div class="wm-cal-grid" id="wmCalGrid" style="margin-top:4px">
+          </div>
+        </div>
+        <div class="wm-panel" id="wm-year">
+          <div class="wm-stat-grid">
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                연간 총 근무일
+              </div>
+              <div class="wm-stat-val" id="wm-ydays">
+                0
+              </div>
+              <div class="wm-stat-sub">
+                일
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                연간 일반 근무시간
+              </div>
+              <div class="wm-stat-val" id="wm-yhours">
+                0h
+              </div>
+              <div class="wm-stat-sub">
+                소정근무 인정시간
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                연간 초과근무
+              </div>
+              <div class="wm-stat-val" id="wm-yot" style="color:var(--orange)">
+                0h
+              </div>
+              <div class="wm-stat-sub">
+                08:30 이전 + 17:30 이후
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                연간 총 근무시간
+              </div>
+              <div class="wm-stat-val" id="wm-ytotal">
+                0h
+              </div>
+              <div class="wm-stat-sub">
+                일반근무 + 초과근무
+              </div>
+            </div>
+            <div class="wm-stat-card">
+              <div class="wm-stat-label">
+                연차
+              </div>
+              <div class="wm-stat-val" id="wm-yleave">
+                0/16
+              </div>
+              <div class="wm-stat-sub">
+                일
+              </div>
+            </div>
+          </div>
+          <div class="wm-chart-title">
+            월별 근무시간 (초과근무 하이라이트)
+          </div>
+          <div class="wm-bar-chart" id="wmYearChart">
+          </div>
+          <div class="wm-legend">
+            <span>
+              <span class="wm-legend-dot" style="background:var(--blue)">
+              </span>
+              소정근무
+            </span>
+            <span>
+              <span class="wm-legend-dot" style="background:var(--orange)">
+              </span>
+              초과근무
+            </span>
+          </div>
+        </div>
+      </section>
+      <div class="wm-modal-bg" id="wmModalBg">
+        <div class="wm-modal">
+          <h3 id="wmModalTitle">
+            근무 기록
+          </h3>
+          <input type="hidden" id="wmModalDate">
+          <label>
+            날짜
+          </label>
+          <input type="date" id="wmInDate">
+          <label>
+            출근
+          </label>
+          <input type="time" id="wmInStart" value="08:30">
+          <label>
+            퇴근
+          </label>
+          <input type="time" id="wmInEnd" value="17:30">
+          <label>
+            근무유형
+          </label>
+          <select id="wmInType">
+            <option value="work">
+              일반근무
+            </option>
+            <option value="remote">
+              재택
+            </option>
+            <option value="leave">
+              연차
+            </option>
+            <option value="half2">
+              반반차
+            </option>
+            <option value="half">
+              반차
+            </option>
+            <option value="holiday">
+              공휴일
+            </option>
+          </select>
+          <label>
+            메모
+          </label>
+          <input type="text" id="wmInMemo" placeholder="선택">
+          <div class="wm-btn-row">
+            <button class="wm-btn-cancel" onclick="wmCloseModal()">
+              취소
+            </button>
+            <button class="wm-btn-del" id="wmBtnDel" onclick="wmDeleteRecord()" style="display:none">
+              삭제
+            </button>
+            <button class="wm-btn-save" onclick="wmSaveRecord()">
+              저장
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="wm-chart-title">이번달 일별 근무시간</div>
-    <div style="overflow-x:auto"><div class="wm-bar-chart" id="wmMonthChart" style="min-width:320px"></div></div>
-    <div class="wm-legend">
-      <span><span class="wm-legend-dot" style="background:var(--blue)"></span>일반</span>
-      <span><span class="wm-legend-dot" style="background:var(--orange)"></span>초과근무 하이라이트</span>
+    <!-- Task detail modal: edit task operations and career notes. -->
+    <div class="modal" id="detailModal">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">
+              업무 관리
+            </div>
+            <div class="modal-sub" id="detailModalSub">
+              생성 후 관리 단계에서 업무 운영 정보와 커리어 기록을 보강합니다.
+            </div>
+          </div>
+          <button class="modal-close" type="button" id="detailModalClose">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="detailTaskId" />
+          <div class="field">
+            <div class="card-title" style="margin-bottom:10px;">
+              업무 운영 정보
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="detailTaskName">
+              업무명
+            </label>
+            <input id="detailTaskName" class="input" type="text" placeholder="업무명" />
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label" for="detailTaskChannel">
+                채널
+              </label>
+              <select id="detailTaskChannel" class="select">
+                <option value="웍스">
+                  웍스
+                </option>
+                <option value="메일">
+                  메일
+                </option>
+                <option value="전화">
+                  전화
+                </option>
+                <option value="회의">
+                  회의
+                </option>
+                <option value="구두">
+                  구두
+                </option>
+                <option value="기타">
+                  기타
+                </option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="detailTaskStatus">
+                상태
+              </label>
+              <select id="detailTaskStatus" class="select">
+                <option value="미진행">
+                  미진행
+                </option>
+                <option value="진행중">
+                  진행중
+                </option>
+                <option value="대기">
+                  대기
+                </option>
+                <option value="완료">
+                  완료
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label" for="detailTaskDueDate">
+                마감일
+              </label>
+              <input id="detailTaskDueDate" class="input" type="date" />
+            </div>
+            <div class="field">
+              <label class="label" for="detailTaskDueTime">
+                마감 시간
+              </label>
+              <input id="detailTaskDueTime" class="input" type="time" />
+            </div>
+          </div>
+          <div class="field" style="margin-top:18px;">
+            <div class="card-title" style="margin-bottom:10px;">
+              업무 우선도
+            </div>
+            <div class="helper-text" style="margin-top:0; margin-bottom:12px;">
+              영향도: 결과 차이의 크기 · 긴급도: 오늘/이번 주 내 미처리 시 문제 발생 여부 · 연결도: 상사 의사결정, 팀 일정, 타인 업무 연계 정도
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label" for="detailTaskImpact">
+                영향도
+              </label>
+              <select id="detailTaskImpact" class="select">
+                <option value="1">
+                  LOW
+                </option>
+                <option value="2">
+                  MEDIUM
+                </option>
+                <option value="3">
+                  HIGH
+                </option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="detailTaskUrgency">
+                긴급도
+              </label>
+              <select id="detailTaskUrgency" class="select">
+                <option value="1">
+                  LOW
+                </option>
+                <option value="2">
+                  MEDIUM
+                </option>
+                <option value="3">
+                  HIGH
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label" for="detailTaskLinkage">
+                연결도
+              </label>
+              <select id="detailTaskLinkage" class="select">
+                <option value="1">
+                  LOW
+                </option>
+                <option value="2">
+                  MEDIUM
+                </option>
+                <option value="3">
+                  HIGH
+                </option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="detailTaskPriorityResult">
+                우선도 결과
+              </label>
+              <input id="detailTaskPriorityResult" class="input" type="text" readonly value="MEDIUM · 5" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="detailTaskDesc">
+              상세 내용
+            </label>
+            <textarea id="detailTaskDesc" class="textarea" placeholder="업무 진행에 필요한 맥락과 메모">
+            </textarea>
+          </div>
+          <div class="field" style="margin-top:18px;">
+            <div class="card-title" style="margin-bottom:10px;">
+              커리어 기록
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="detailTaskProject">
+              프로젝트
+            </label>
+            <div class="project-inline-row">
+              <select id="detailTaskProjectSelect" class="select">
+                <option value="__new__">
+                  새로 입력
+                </option>
+              </select>
+              <input id="detailTaskProject" class="input" type="text" placeholder="프로젝트명" />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label" for="detailTaskOutcome">
+                성과
+              </label>
+              <textarea id="detailTaskOutcome" class="textarea compact" placeholder="성과 기록">
+              </textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="detailTaskLearning">
+                시사점
+              </label>
+              <textarea id="detailTaskLearning" class="textarea compact" placeholder="시사점">
+              </textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" id="detailModalCancel">
+            닫기
+          </button>
+          <button class="btn btn-primary" type="button" id="detailModalSave">
+            저장
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="wm-panel" id="wm-cal">
-    <div class="wm-cal-nav">
-      <button id="wmPrev">&#8249;</button>
-      <span class="wm-cal-month" id="wmMonthLabel"></span>
-      <button id="wmNext">&#8250;</button>
+    <!-- Report modal: write or update weekly/monthly report text. -->
+    <div class="modal" id="reportModal">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title" id="reportModalTitle">
+              리포트 작성
+            </div>
+            <div class="modal-sub" id="reportModalSub">
+              기간별 리포트 내용을 입력합니다.
+            </div>
+          </div>
+          <button class="modal-close" type="button" id="reportModalClose">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="reportType" />
+          <input type="hidden" id="reportPeriodKey" />
+          <div class="field">
+            <label class="label" for="reportPeriodLabel">
+              기간
+            </label>
+            <input id="reportPeriodLabel" class="input" type="text" readonly />
+          </div>
+          <div class="field">
+            <label class="label" for="reportContent">
+              내용
+            </label>
+            <textarea id="reportContent" class="textarea" style="min-height: 240px;" placeholder="리포트 내용을 입력하세요">
+            </textarea>
+            <div class="helper-text">
+              열릴 때 해당 기간 전체 업무가 "1. 업무명 [상태]" 형식으로 자동 입력되며 자유롭게 수정할 수 있습니다.
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" id="reportModalCancel">
+            닫기
+          </button>
+          <button class="btn btn-primary" type="button" id="reportModalSave">
+            저장
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="wm-cal-grid">
-      <div class="wm-cal-hdr" style="color:#ff3b30">일</div><div class="wm-cal-hdr">월</div><div class="wm-cal-hdr">화</div><div class="wm-cal-hdr">수</div><div class="wm-cal-hdr">목</div><div class="wm-cal-hdr">금</div><div class="wm-cal-hdr" style="color:#007aff">토</div>
-    </div>
-    <div class="wm-cal-grid" id="wmCalGrid" style="margin-top:4px"></div>
-  </div>
-  <div class="wm-panel" id="wm-year">
-    <div class="wm-stat-grid">
-      <div class="wm-stat-card"><div class="wm-stat-label">연간 총 근무일</div><div class="wm-stat-val" id="wm-ydays">0</div><div class="wm-stat-sub">일</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">연간 일반 근무시간</div><div class="wm-stat-val" id="wm-yhours">0h</div><div class="wm-stat-sub">소정근무 인정시간</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">연간 초과근무</div><div class="wm-stat-val" id="wm-yot" style="color:var(--orange)">0h</div><div class="wm-stat-sub">08:30 이전 + 17:30 이후</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">연간 총 근무시간</div><div class="wm-stat-val" id="wm-ytotal">0h</div><div class="wm-stat-sub">일반근무 + 초과근무</div></div>
-      <div class="wm-stat-card"><div class="wm-stat-label">연차</div><div class="wm-stat-val" id="wm-yleave">0/16</div><div class="wm-stat-sub">일</div></div>
-    </div>
-    <div class="wm-chart-title">월별 근무시간 (초과근무 하이라이트)</div>
-    <div class="wm-bar-chart" id="wmYearChart"></div>
-    <div class="wm-legend">
-      <span><span class="wm-legend-dot" style="background:var(--blue)"></span>소정근무</span>
-      <span><span class="wm-legend-dot" style="background:var(--orange)"></span>초과근무</span>
-    </div>
-  </div>
-</section>
-<div class="wm-modal-bg" id="wmModalBg">
-  <div class="wm-modal">
-    <h3 id="wmModalTitle">근무 기록</h3>
-    <input type="hidden" id="wmModalDate">
-    <label>날짜</label><input type="date" id="wmInDate">
-    <label>출근</label><input type="time" id="wmInStart" value="08:30">
-    <label>퇴근</label><input type="time" id="wmInEnd" value="17:30">
-    <label>근무유형</label>
-    <select id="wmInType">
-      <option value="work">일반근무</option>
-      <option value="remote">재택</option>
-      <option value="leave">연차</option>
-      <option value="half2">반반차</option>
-      <option value="half">반차</option>
-      <option value="holiday">공휴일</option>
-    </select>
-    <label>메모</label><input type="text" id="wmInMemo" placeholder="선택">
-    <div class="wm-btn-row">
-      <button class="wm-btn-cancel" onclick="wmCloseModal()">취소</button>
-      <button class="wm-btn-del" id="wmBtnDel" onclick="wmDeleteRecord()" style="display:none">삭제</button>
-      <button class="wm-btn-save" onclick="wmSaveRecord()">저장</button>
-    </div>
-  </div>
-</div>  </div>  <div class="modal" id="detailModal">    <div class="modal-box">      <div class="modal-head">        <div>          <div class="modal-title">업무 관리</div>          <div class="modal-sub" id="detailModalSub">생성 후 관리 단계에서 업무 운영 정보와 커리어 기록을 보강합니다.</div>        </div>        <button class="modal-close" type="button" id="detailModalClose">×</button>      </div>      <div class="modal-body">        <input type="hidden" id="detailTaskId" />        <div class="field">          <div class="card-title" style="margin-bottom:10px;">업무 운영 정보</div>        </div>        <div class="field">          <label class="label" for="detailTaskName">업무명</label>          <input id="detailTaskName" class="input" type="text" placeholder="업무명" />        </div>        <div class="form-grid">          <div class="field">            <label class="label" for="detailTaskChannel">채널</label>            <select id="detailTaskChannel" class="select">              <option value="웍스">웍스</option>              <option value="메일">메일</option>              <option value="전화">전화</option>              <option value="회의">회의</option>              <option value="구두">구두</option>              <option value="기타">기타</option>            </select>          </div>          <div class="field">            <label class="label" for="detailTaskStatus">상태</label>            <select id="detailTaskStatus" class="select">              <option value="미진행">미진행</option>              <option value="진행중">진행중</option>              <option value="대기">대기</option>              <option value="완료">완료</option>            </select>          </div>        </div>        <div class="form-grid">          <div class="field">            <label class="label" for="detailTaskDueDate">마감일</label>            <input id="detailTaskDueDate" class="input" type="date" />          </div>          <div class="field">            <label class="label" for="detailTaskDueTime">마감 시간</label>            <input id="detailTaskDueTime" class="input" type="time" />          </div>        </div>        <div class="field" style="margin-top:18px;">          <div class="card-title" style="margin-bottom:10px;">업무 우선도</div>          <div class="helper-text" style="margin-top:0; margin-bottom:12px;">영향도: 결과 차이의 크기 · 긴급도: 오늘/이번 주 내 미처리 시 문제 발생 여부 · 연결도: 상사 의사결정, 팀 일정, 타인 업무 연계 정도</div>        </div>        <div class="form-grid">          <div class="field">            <label class="label" for="detailTaskImpact">영향도</label>            <select id="detailTaskImpact" class="select">              <option value="1">LOW</option>              <option value="2">MEDIUM</option>              <option value="3">HIGH</option>            </select>          </div>          <div class="field">            <label class="label" for="detailTaskUrgency">긴급도</label>            <select id="detailTaskUrgency" class="select">              <option value="1">LOW</option>              <option value="2">MEDIUM</option>              <option value="3">HIGH</option>            </select>          </div>        </div>        <div class="form-grid">          <div class="field">            <label class="label" for="detailTaskLinkage">연결도</label>            <select id="detailTaskLinkage" class="select">              <option value="1">LOW</option>              <option value="2">MEDIUM</option>              <option value="3">HIGH</option>            </select>          </div>          <div class="field">            <label class="label" for="detailTaskPriorityResult">우선도 결과</label>            <input id="detailTaskPriorityResult" class="input" type="text" readonly value="MEDIUM · 5" />          </div>        </div>        <div class="field">          <label class="label" for="detailTaskDesc">상세 내용</label>          <textarea id="detailTaskDesc" class="textarea" placeholder="업무 진행에 필요한 맥락과 메모"></textarea>        </div>        <div class="field" style="margin-top:18px;">          <div class="card-title" style="margin-bottom:10px;">커리어 기록</div>        </div>        <div class="field">          <label class="label" for="detailTaskProject">프로젝트</label>          <div class="project-inline-row">            <select id="detailTaskProjectSelect" class="select">              <option value="__new__">새로 입력</option>            </select>            <input id="detailTaskProject" class="input" type="text" placeholder="프로젝트명" />          </div>        </div>        <div class="form-grid">          <div class="field">            <label class="label" for="detailTaskOutcome">성과</label>            <textarea id="detailTaskOutcome" class="textarea compact" placeholder="성과 기록"></textarea>          </div>          <div class="field">            <label class="label" for="detailTaskLearning">시사점</label>            <textarea id="detailTaskLearning" class="textarea compact" placeholder="시사점"></textarea>          </div>        </div>      </div>      <div class="modal-actions">        <button class="btn btn-secondary" type="button" id="detailModalCancel">닫기</button>        <button class="btn btn-primary" type="button" id="detailModalSave">저장</button>      </div>    </div>  </div>  <div class="modal" id="reportModal">    <div class="modal-box">      <div class="modal-head">        <div>          <div class="modal-title" id="reportModalTitle">리포트 작성</div>          <div class="modal-sub" id="reportModalSub">기간별 리포트 내용을 입력합니다.</div>        </div>        <button class="modal-close" type="button" id="reportModalClose">×</button>      </div>      <div class="modal-body">        <input type="hidden" id="reportType" />        <input type="hidden" id="reportPeriodKey" />        <div class="field">          <label class="label" for="reportPeriodLabel">기간</label>          <input id="reportPeriodLabel" class="input" type="text" readonly />        </div>        <div class="field">          <label class="label" for="reportContent">내용</label>          <textarea id="reportContent" class="textarea" style="min-height: 240px;" placeholder="리포트 내용을 입력하세요"></textarea>          <div class="helper-text">열릴 때 해당 기간 전체 업무가 "1. 업무명 [상태]" 형식으로 자동 입력되며 자유롭게 수정할 수 있습니다.</div>        </div>      </div>      <div class="modal-actions">        <button class="btn btn-secondary" type="button" id="reportModalCancel">닫기</button>        <button class="btn btn-primary" type="button" id="reportModalSave">저장</button>      </div>    </div>  </div><script>(function () {  'use strict';  const STORAGE_KEY = 'work_dashboard_tasks_v1';  const WEEKLY_KEY = 'work_weekly_history_v1';  const MONTHLY_KEY = 'work_monthly_history_v1';  const PROJECT_ORDER_KEY = 'work_project_order_v1';  const PROJECT_COLLAPSE_KEY = 'work_project_collapse_v1';  const STATUS_LIST = ['미진행', '진행중', '대기', '완료'];  const CHANNEL_LIST = ['웍스', '메일', '전화', '회의', '구두', '기타'];  const STATUS_COLORS = {    '완료': '#34c759',    '진행중': '#007aff',    '대기': '#af52de',    '미진행': '#8e8e93'  };  const CHANNEL_COLORS = ['#007aff', '#34c759', '#ff9500', '#af52de', '#5ac8fa', '#8e8e93'];  let tasks = [];  let weeklyHistory = [];  let monthlyHistory = [];  let projectOrder = [];  let selectedPriority = '중';  let currentTab = 'home';  let taskFilterStatus = '전체';  let currentPage = 1;  let rowsPerPage = 10;  let projectFilter = '전체';  let weeklyOffset = 0;  let monthlyOffset = 0;  let dueAmpm = '오전';  let statusChartWindow = 'day';  let channelChartWindow = 'week';  let trendChartWindow = '7d';  const expandedWeeklyReports = new Set();  const expandedMonthlyReports = new Set();  const collapsedProjectGroups = new Set();  const $ = (id) => document.getElementById(id);  const escapeHtml = (value) => String(value ?? '')    .replace(/&/g, '&amp;')    .replace(/</g, '&lt;')    .replace(/>/g, '&gt;')    .replace(/"/g, '&quot;')    .replace(/'/g, '&#39;');  function safeArrayParse(raw) {    if (!raw) return [];    try {      const parsed = JSON.parse(raw);      return Array.isArray(parsed) ? parsed : [];    } catch (error) {      console.error('JSON parse error:', error);      return [];    }  }  function pad2(n) { return String(n).padStart(2, '0'); }  function startOfDay(date) {    const d = new Date(date);    d.setHours(0, 0, 0, 0);    return d;  }  function endOfDay(date) {    const d = new Date(date);    d.setHours(23, 59, 59, 999);    return d;  }  function addDays(date, days) {    const d = new Date(date);    d.setDate(d.getDate() + days);    return d;  }  function getWeekRange(offset = 0) {    const now = new Date();    const base = startOfDay(now);    const day = base.getDay();    const mondayShift = day === 0 ? -6 : 1 - day;    const start = addDays(base, mondayShift + offset * 7);    const end = endOfDay(addDays(start, 6));    return { start, end };  }  function getMonthRange(offset = 0) {    const now = new Date();    const start = new Date(now.getFullYear(), now.getMonth() + offset, 1, 0, 0, 0, 0);    const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59, 999);    return { start, end };  }  function parseKoreanTime(timeStr) {    if (!timeStr || typeof timeStr !== 'string') return { hour: 12, minute: 0 };    const trimmed = timeStr.trim();    const m = trimmed.match(/^(오전|오후)\s*(\d{1,2}):(\d{2})$/);    if (m) {      let hour = Number(m[2]);      const minute = Number(m[3]);      if (m[1] === '오전') {        if (hour === 12) hour = 0;      } else {        if (hour !== 12) hour += 12;      }      return { hour, minute };    }    const m2 = trimmed.match(/^(\d{1,2}):(\d{2})$/);    if (m2) {      return { hour: Number(m2[1]), minute: Number(m2[2]) };    }    return { hour: 12, minute: 0 };  }  function toKoreanTime(date) {    const h = date.getHours();    const ap = h >= 12 ? '오후' : '오전';    const hh = h % 12 || 12;    return `${ap} ${pad2(hh)}:${pad2(date.getMinutes())}`;  }  function parseDueDateTime(dueDate, dueTime) {    if (!dueDate) return null;    const parts = String(dueDate).split('-').map(Number);    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;    const t = parseKoreanTime(dueTime);    return new Date(parts[0], parts[1] - 1, parts[2], t.hour, t.minute, 0, 0);  }  function formatDueDisplay(task) {    const d = parseDueDateTime(task.dueDate, task.dueTime);    if (!d) return '-';    return `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${toKoreanTime(d)}`;  }  function normalizeTask(raw, index) {    const created = raw && raw.createdAt ? new Date(raw.createdAt) : new Date();    const createdAt = Number.isNaN(created.getTime()) ? new Date().toISOString() : created.toISOString();    const priority = ['상', '중', '하'].includes(raw?.priority) ? raw.priority : '중';    const normalizedStatus = raw?.status === '미착수' ? '미진행' : raw?.status;
+    <script>
+// Main app script: storage, rendering, charts, and event binding.
+(function () {  'use strict';  const STORAGE_KEY = 'work_dashboard_tasks_v1';  const WEEKLY_KEY = 'work_weekly_history_v1';  const MONTHLY_KEY = 'work_monthly_history_v1';  const PROJECT_ORDER_KEY = 'work_project_order_v1';  const PROJECT_COLLAPSE_KEY = 'work_project_collapse_v1';  const STATUS_LIST = ['미진행', '진행중', '대기', '완료'];  const CHANNEL_LIST = ['웍스', '메일', '전화', '회의', '구두', '기타'];  const STATUS_COLORS = {    '완료': '#34c759',    '진행중': '#007aff',    '대기': '#af52de',    '미진행': '#8e8e93'  };  const CHANNEL_COLORS = ['#007aff', '#34c759', '#ff9500', '#af52de', '#5ac8fa', '#8e8e93'];  let tasks = [];  let weeklyHistory = [];  let monthlyHistory = [];  let projectOrder = [];  let selectedPriority = '중';  let currentTab = 'home';  let taskFilterStatus = '전체';  let currentPage = 1;  let rowsPerPage = 10;  let projectFilter = '전체';  let weeklyOffset = 0;  let monthlyOffset = 0;  let dueAmpm = '오전';  let statusChartWindow = 'day';  let channelChartWindow = 'week';  let trendChartWindow = '7d';  const expandedWeeklyReports = new Set();  const expandedMonthlyReports = new Set();  const collapsedProjectGroups = new Set();  const $ = (id) => document.getElementById(id);  const escapeHtml = (value) => String(value ?? '')    .replace(/&/g, '&amp;')    .replace(/</g, '&lt;')    .replace(/>/g, '&gt;')    .replace(/"/g, '&quot;')    .replace(/'/g, '&#39;');  function safeArrayParse(raw) {    if (!raw) return [];    try {      const parsed = JSON.parse(raw);      return Array.isArray(parsed) ? parsed : [];    } catch (error) {      console.error('JSON parse error:', error);      return [];    }  }  function pad2(n) { return String(n).padStart(2, '0'); }  function startOfDay(date) {    const d = new Date(date);    d.setHours(0, 0, 0, 0);    return d;  }  function endOfDay(date) {    const d = new Date(date);    d.setHours(23, 59, 59, 999);    return d;  }  function addDays(date, days) {    const d = new Date(date);    d.setDate(d.getDate() + days);    return d;  }  function getWeekRange(offset = 0) {    const now = new Date();    const base = startOfDay(now);    const day = base.getDay();    const mondayShift = day === 0 ? -6 : 1 - day;    const start = addDays(base, mondayShift + offset * 7);    const end = endOfDay(addDays(start, 6));    return { start, end };  }  function getMonthRange(offset = 0) {    const now = new Date();    const start = new Date(now.getFullYear(), now.getMonth() + offset, 1, 0, 0, 0, 0);    const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59, 999);    return { start, end };  }  function parseKoreanTime(timeStr) {    if (!timeStr || typeof timeStr !== 'string') return { hour: 12, minute: 0 };    const trimmed = timeStr.trim();    const m = trimmed.match(/^(오전|오후)\s*(\d{1,2}):(\d{2})$/);    if (m) {      let hour = Number(m[2]);      const minute = Number(m[3]);      if (m[1] === '오전') {        if (hour === 12) hour = 0;      } else {        if (hour !== 12) hour += 12;      }      return { hour, minute };    }    const m2 = trimmed.match(/^(\d{1,2}):(\d{2})$/);    if (m2) {      return { hour: Number(m2[1]), minute: Number(m2[2]) };    }    return { hour: 12, minute: 0 };  }  function toKoreanTime(date) {    const h = date.getHours();    const ap = h >= 12 ? '오후' : '오전';    const hh = h % 12 || 12;    return `${ap} ${pad2(hh)}:${pad2(date.getMinutes())}`;  }  function parseDueDateTime(dueDate, dueTime) {    if (!dueDate) return null;    const parts = String(dueDate).split('-').map(Number);    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;    const t = parseKoreanTime(dueTime);    return new Date(parts[0], parts[1] - 1, parts[2], t.hour, t.minute, 0, 0);  }  function formatDueDisplay(task) {    const d = parseDueDateTime(task.dueDate, task.dueTime);    if (!d) return '-';    return `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${toKoreanTime(d)}`;  }  function normalizeTask(raw, index) {    const created = raw && raw.createdAt ? new Date(raw.createdAt) : new Date();    const createdAt = Number.isNaN(created.getTime()) ? new Date().toISOString() : created.toISOString();    const priority = ['상', '중', '하'].includes(raw?.priority) ? raw.priority : '중';    const normalizedStatus = raw?.status === '미착수' ? '미진행' : raw?.status;
     const status = STATUS_LIST.includes(normalizedStatus) ? normalizedStatus : '미진행';    const channel = CHANNEL_LIST.includes(raw?.channel) ? raw.channel : '기타';    const toPriorityLevel = (value, fallback) => { const n = Number(value); return [1,2,3].includes(n) ? n : fallback; };    const fallbackImpact = priority === '상' ? 3 : priority === '중' ? 2 : 1;    const fallbackUrgency = priority === '상' ? 3 : priority === '중' ? 2 : 1;    const fallbackLinkage = priority === '상' ? 2 : 1;    return {      id: raw?.id ? String(raw.id) : `task_${Date.now()}_${index}`,      name: String(raw?.name ?? '').trim(),      channel,      dueDate: typeof raw?.dueDate === 'string' ? raw.dueDate : '',      dueTime: typeof raw?.dueTime === 'string' ? raw.dueTime : '',      priority,      status,      project: typeof raw?.project === 'string' ? raw.project : '',      description: typeof raw?.description === 'string' ? raw.description : '',      outcome: typeof raw?.outcome === 'string' ? raw.outcome : '',      learning: typeof raw?.learning === 'string' ? raw.learning : '',      impact: toPriorityLevel(raw?.impact, fallbackImpact),      urgency: toPriorityLevel(raw?.urgency, fallbackUrgency),      linkage: toPriorityLevel(raw?.linkage, fallbackLinkage),      createdAt    };  }  function normalizeReport(raw, index, type) {    const savedAt = raw?.savedAt ? new Date(raw.savedAt) : new Date();    const safeSavedAt = Number.isNaN(savedAt.getTime()) ? new Date().toISOString() : savedAt.toISOString();    return {      id: raw?.id ? String(raw.id) : `${type}_${Date.now()}_${index}`,      periodKey: String(raw?.periodKey ?? ''),      title: String(raw?.title ?? ''),      content: String(raw?.content ?? ''),      savedAt: safeSavedAt,      savedAtText: raw?.savedAtText ? String(raw.savedAtText) : new Date(safeSavedAt).toLocaleString('ko-KR')    };  }  function loadStorage() {    tasks = safeArrayParse(localStorage.getItem(STORAGE_KEY))      .map(normalizeTask)      .filter((task) => task.name);    weeklyHistory = safeArrayParse(localStorage.getItem(WEEKLY_KEY)).map((item, index) => normalizeReport(item, index, 'weekly'));    monthlyHistory = safeArrayParse(localStorage.getItem(MONTHLY_KEY)).map((item, index) => normalizeReport(item, index, 'monthly'));    projectOrder = safeArrayParse(localStorage.getItem(PROJECT_ORDER_KEY)).map((item) => String(item || '').trim()).filter(Boolean);    safeArrayParse(localStorage.getItem(PROJECT_COLLAPSE_KEY)).map((item) => String(item || '').trim()).filter(Boolean).forEach((name) => collapsedProjectGroups.add(name));    syncProjectOrder();  }  function saveTasks() {    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));    syncProjectOrder();  }  function saveWeeklyHistory() {    localStorage.setItem(WEEKLY_KEY, JSON.stringify(weeklyHistory));  }  function saveMonthlyHistory() {    localStorage.setItem(MONTHLY_KEY, JSON.stringify(monthlyHistory));  }  function saveProjectOrder() {    localStorage.setItem(PROJECT_ORDER_KEY, JSON.stringify(projectOrder));  }  function saveCollapsedProjectGroups() {    localStorage.setItem(PROJECT_COLLAPSE_KEY, JSON.stringify(Array.from(collapsedProjectGroups)));  }  function getDistinctProjectNames() {    return Array.from(new Set(tasks.map((task) => String(task.project || '').trim()).filter(Boolean)));  }  function syncProjectOrder() {    const names = getDistinctProjectNames();    projectOrder = projectOrder.filter((name) => names.includes(name));    names.forEach((name) => { if (!projectOrder.includes(name)) projectOrder.push(name); });    saveProjectOrder();  }  function getOrderedProjectGroups(groupMap) {    const names = Object.keys(groupMap);    const orderedNamed = projectOrder.filter((name) => names.includes(name));    names.filter((name) => name !== '__unassigned__' && !orderedNamed.includes(name)).sort((a,b)=>a.localeCompare(b,'ko')).forEach((name) => orderedNamed.push(name));    if (names.includes('__unassigned__')) orderedNamed.push('__unassigned__');    return orderedNamed.map((name) => [name, groupMap[name]]);  }  function moveProjectOrder(projectName, direction) {    if (!projectName || projectName === '__unassigned__') return;    syncProjectOrder();    const index = projectOrder.indexOf(projectName);    if (index < 0) return;    const target = direction === 'up' ? index - 1 : index + 1;    if (target < 0 || target >= projectOrder.length) return;    const swap = projectOrder[target];    projectOrder[target] = projectName;    projectOrder[index] = swap;    saveProjectOrder();    renderTaskTable();  }  function renameProject(currentName) {    if (!currentName || currentName === '__unassigned__') return;    const nextName = prompt('변경할 프로젝트 명칭을 입력하세요.', currentName);    if (nextName == null) return;    const trimmed = String(nextName).trim();    if (!trimmed || trimmed === currentName) return;    tasks.forEach((task) => { if (String(task.project || '').trim() === currentName) task.project = trimmed; });    projectOrder = projectOrder.map((name) => name === currentName ? trimmed : name).filter((name, index, arr) => arr.indexOf(name) === index);    if (collapsedProjectGroups.has(currentName)) { collapsedProjectGroups.delete(currentName); collapsedProjectGroups.add(trimmed); }    saveTasks();    saveCollapsedProjectGroups();    refreshProjectFilterOptions();    renderProjectSelectOptions();    renderAll();  }  function toggleProjectGroup(projectName) {    if (!projectName) return;    if (collapsedProjectGroups.has(projectName)) collapsedProjectGroups.delete(projectName); else collapsedProjectGroups.add(projectName);    saveCollapsedProjectGroups();    renderTaskTable();  }  function renderProjectSelectOptions(selectedProject = '', keepInput = '') {    const select = $('detailTaskProjectSelect');    if (!select) return;    syncProjectOrder();    const currentInput = typeof keepInput === 'string' ? keepInput : ($('detailTaskProject')?.value || '');    const orderedProjects = projectOrder.slice();    select.innerHTML = `<option value="__new__">새로 입력</option>${orderedProjects.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;    const normalizedSelected = String(selectedProject || '').trim();    if (normalizedSelected && orderedProjects.includes(normalizedSelected)) select.value = normalizedSelected;    else select.value = '__new__';    if ($('detailTaskProject')) $('detailTaskProject').value = normalizedSelected || currentInput || '';  }  function isCreatedWithin(task, start, end) {    const d = new Date(task.createdAt);    return !Number.isNaN(d.getTime()) && d >= start && d <= end;  }  function isDueWithin(task, start, end) {    const d = parseDueDateTime(task.dueDate, task.dueTime);    return !!d && d >= start && d <= end;  }  function isRelatedWithin(task, start, end) {    return isCreatedWithin(task, start, end) || isDueWithin(task, start, end);  }  function isOverdue(task) {    if (task.status === '완료') return false;    const d = parseDueDateTime(task.dueDate, task.dueTime);    return !!d && d.getTime() < Date.now();  }  function isDueSoon(task) {    if (task.status === '완료') return false;    const d = parseDueDateTime(task.dueDate, task.dueTime);    if (!d) return false;    const now = new Date();    const threshold = addDays(now, 3);    return d >= now && d <= threshold;  }  function urgencyGroup(task) {    if (task.status === '완료') return 4;    if (isOverdue(task)) return 0;    if (isDueSoon(task)) return 1;    const due = parseDueDateTime(task.dueDate, task.dueTime);    return due ? 2 : 3;  }  function getPriorityInputs(task) {    const impact = [1,2,3].includes(Number(task?.impact)) ? Number(task.impact) : (task?.priority === '상' ? 3 : task?.priority === '하' ? 1 : 2);    const urgency = [1,2,3].includes(Number(task?.urgency)) ? Number(task.urgency) : (task?.priority === '상' ? 3 : task?.priority === '하' ? 1 : 2);    const linkage = [1,2,3].includes(Number(task?.linkage)) ? Number(task.linkage) : (task?.priority === '상' ? 2 : 1);    return { impact, urgency, linkage };  }  function getPriorityScore(task) {    const { impact, urgency, linkage } = getPriorityInputs(task);    return impact + urgency + linkage;  }  function getPriorityBadge(score) {    if (score >= 8) return { cls: 'score-critical', label: 'CRITICAL' };    if (score >= 6) return { cls: 'score-urgent', label: 'HIGH' };    if (score >= 4) return { cls: 'score-watch', label: 'MEDIUM' };    return { cls: 'score-low', label: 'LOW' };  }  function getPriorityDisplay(task) {    const score = getPriorityScore(task);    const badge = getPriorityBadge(score);    return { score, label: badge.label, cls: badge.cls, text: `${badge.label} · ${score}` };  }  function calcScore(task) {    if (task.status === '완료') return -1;    const priorityScore = getPriorityScore(task);    let todayWeight = 0;    if (isOverdue(task)) todayWeight += 3;    else if (isDueSoon(task)) todayWeight += 2;    else if (parseDueDateTime(task.dueDate, task.dueTime)) todayWeight += 1;    if (task.status === '진행중') todayWeight += 1;    return priorityScore + todayWeight;  }  function sortTasks(list) {    return [...list].sort((a, b) => {      const scoreDiff = calcScore(b) - calcScore(a);      if (scoreDiff !== 0) return scoreDiff;      const priorityDiff = getPriorityScore(b) - getPriorityScore(a);      if (priorityDiff !== 0) return priorityDiff;      const da = parseDueDateTime(a.dueDate, a.dueTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;      const db = parseDueDateTime(b.dueDate, b.dueTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;      if (da !== db) return da - db;      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();    });  }  function fillTimeSelectorsFromDue(hour24, minute) {
     const safeHour = Number.isFinite(Number(hour24)) ? Number(hour24) : 9;
     const safeMinute = Number.isFinite(Number(minute)) ? Number(minute) : 0;
@@ -2825,36 +3891,66 @@ window.styleStatusSelect = function(sel){
 })();
 
 </script>
-<div id="tweaksPanel">
-  <h4>Tweaks</h4>
-  <div class="tw-row">
-    <span class="tw-label">다크 모드</span>
-    <div class="tw-switch" id="twDark" data-key="dark"></div>
-  </div>
-  <div class="tw-row">
-    <span class="tw-label">컴팩트 밀도</span>
-    <div class="tw-switch" id="twCompact" data-key="compact"></div>
-  </div>
-  <div class="tw-row">
-    <span class="tw-label">배경 톤</span>
-    <select id="twBgTone">
-      <option value="warm">Warm</option>
-      <option value="cool">Cool</option>
-      <option value="neutral">Neutral</option>
-    </select>
-  </div>
-  <div class="tw-row">
-    <span class="tw-label">강조색</span>
-    <select id="twAccent">
-      <option value="blue">Blue</option>
-      <option value="green">Green</option>
-      <option value="purple">Purple</option>
-      <option value="orange">Orange</option>
-      <option value="graphite">Graphite</option>
-    </select>
-  </div>
-</div>
-<script>
+    <!-- Edit-mode tweaks panel: theme, density, background tone, and accent color. -->
+    <div id="tweaksPanel">
+      <h4>
+        Tweaks
+      </h4>
+      <div class="tw-row">
+        <span class="tw-label">
+          ?? ??
+        </span>
+        <div class="tw-switch" id="twDark" data-key="dark">
+        </div>
+      </div>
+      <div class="tw-row">
+        <span class="tw-label">
+          ??? ??
+        </span>
+        <div class="tw-switch" id="twCompact" data-key="compact">
+        </div>
+      </div>
+      <div class="tw-row">
+        <span class="tw-label">
+          ?? ?
+        </span>
+        <select id="twBgTone">
+          <option value="warm">
+            Warm
+          </option>
+          <option value="cool">
+            Cool
+          </option>
+          <option value="neutral">
+            Neutral
+          </option>
+        </select>
+      </div>
+      <div class="tw-row">
+        <span class="tw-label">
+          ???
+        </span>
+        <select id="twAccent">
+          <option value="blue">
+            Blue
+          </option>
+          <option value="green">
+            Green
+          </option>
+          <option value="purple">
+            Purple
+          </option>
+          <option value="orange">
+            Orange
+          </option>
+          <option value="graphite">
+            Graphite
+          </option>
+        </select>
+      </div>
+    </div>
+    <script>
+// Edit-mode script: stores and applies visual tweak options.
 (function(){
   const TWEAKS = /*EDITMODE-BEGIN*/{
     "dark": false,
@@ -2948,4 +4044,5 @@ window.styleStatusSelect = function(sel){
   apply();
 })();
 </script>
-</body></html>
+  </body>
+</html>
