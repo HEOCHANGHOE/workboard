@@ -64,6 +64,29 @@
     return localStorage.getItem(LOCAL_UPDATED_KEY) || null;
   }
 
+  function isEmptyArrayValue(value) {
+    return value == null || (Array.isArray(value) && value.length === 0);
+  }
+
+  function isEmptyObjectValue(value) {
+    return value == null || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
+  }
+
+  function snapshotHasMeaningfulData(snapshot) {
+    if (!snapshot || !snapshot.data) return false;
+    return !isEmptyArrayValue(snapshot.data.work_dashboard_tasks_v1) ||
+      !isEmptyArrayValue(snapshot.data.work_weekly_history_v1) ||
+      !isEmptyArrayValue(snapshot.data.work_monthly_history_v1) ||
+      !isEmptyObjectValue(snapshot.data.wt_rec);
+  }
+
+  function localHasMeaningfulData() {
+    return !isEmptyArrayValue(readJsonKey('work_dashboard_tasks_v1')) ||
+      !isEmptyArrayValue(readJsonKey('work_weekly_history_v1')) ||
+      !isEmptyArrayValue(readJsonKey('work_monthly_history_v1')) ||
+      !isEmptyObjectValue(readJsonKey('wt_rec'));
+  }
+
   function readJsonKey(key) {
     const raw = localStorage.getItem(key);
     if (raw == null) return null;
@@ -263,9 +286,12 @@
       if (!remote || !remote.payload) return;
       const localUpdated = Date.parse(getLocalUpdatedAt() || '1970-01-01T00:00:00.000Z');
       const remoteUpdated = Date.parse(remote.updated_at || remote.payload.exportedAt || '1970-01-01T00:00:00.000Z');
-      const localEmpty = DATA_KEYS.every((key) => localStorage.getItem(key) == null);
-      if (localEmpty) {
+      const localEmpty = !localHasMeaningfulData();
+      const remoteHasData = snapshotHasMeaningfulData(remote.payload);
+      if (localEmpty && remoteHasData) {
+        suppressUpload = true;
         applySnapshot(remote.payload);
+        suppressUpload = false;
         window.location.reload();
         return;
       }
