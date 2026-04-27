@@ -203,7 +203,7 @@
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setState('백업 저장됨', 'online');
+    setState('저장됨', 'online');
   }
 
   function importBackup(file) {
@@ -213,7 +213,7 @@
       try {
         const snapshot = JSON.parse(String(reader.result || '{}'));
         applySnapshot(snapshot);
-        setState('백업 복원됨', 'online');
+        setState('복원됨', 'online');
         window.setTimeout(() => window.location.reload(), 250);
       } catch (error) {
         alert(error.message || '백업 파일을 읽을 수 없습니다.');
@@ -260,7 +260,7 @@
       applySnapshot(snapshot);
     }
     originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
-    setState('클라우드 저장됨', 'online');
+    setState('저장됨', 'online');
   }
 
   async function syncWithCloud(options = {}) {
@@ -293,12 +293,12 @@
         originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
       }
       if (localChanged) {
-        setState('클라우드 동기화됨', 'online');
+        setState('최신 상태', 'online');
         if (!reloadOnceForSnapshot(merged)) {
-          setState('동기화됨 · 새로고침 생략', 'online');
+          setState('최신 상태', 'online');
         }
       } else if (!options.silent) {
-        setState('클라우드 최신 상태', 'online');
+        setState('최신 상태', 'online');
       }
     } catch (error) {
       console.error(error);
@@ -312,14 +312,14 @@
     try {
       const remote = await fetchRemoteSnapshot();
       if (!remote || !remote.payload) {
-        setState('클라우드 비어 있음', 'warn');
+        setState('저장된 데이터 없음', 'warn');
         return;
       }
       if (!force && !confirm('클라우드 데이터를 이 기기에 덮어쓸까요?')) return;
       const merged = mergeSnapshots(buildSnapshot(), remote.payload);
       applySnapshot(merged);
       originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.exportedAt || new Date().toISOString());
-      setState('클라우드 불러옴', 'online');
+      setState('불러옴', 'online');
       window.setTimeout(() => window.location.reload(), 250);
     } catch (error) {
       console.error(error);
@@ -379,7 +379,7 @@
     await client.auth.signOut();
     session = null;
     setCloudControls(false);
-    setState('Local', 'warn');
+    setState('로컬 모드', 'warn');
   }
 
   async function refreshSession() {
@@ -389,10 +389,9 @@
     const user = getUser();
     setCloudControls(Boolean(user));
     if (user) {
-      const label = user.email ? user.email : 'Google 연결됨';
-      setState(label, 'online');
+      setState('동기화 켜짐', 'online');
     } else {
-      setState('Google 로그인 필요', 'warn');
+      setState('로그인 필요', 'warn');
     }
   }
 
@@ -422,6 +421,25 @@
   }
 
   function bindUi() {
+    const syncTools = $('syncTools');
+    const syncMenu = $('syncMenu');
+    const syncMenuBtn = $('syncMenuBtn');
+    syncMenuBtn?.addEventListener('click', () => {
+      if (!syncMenu) return;
+      const willOpen = syncMenu.hidden;
+      syncMenu.hidden = !willOpen;
+      syncMenuBtn.setAttribute('aria-expanded', String(willOpen));
+    });
+    document.addEventListener('click', (event) => {
+      if (!syncMenu || syncMenu.hidden || !syncTools || syncTools.contains(event.target)) return;
+      syncMenu.hidden = true;
+      syncMenuBtn?.setAttribute('aria-expanded', 'false');
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !syncMenu || syncMenu.hidden) return;
+      syncMenu.hidden = true;
+      syncMenuBtn?.setAttribute('aria-expanded', 'false');
+    });
     $('exportBackupBtn')?.addEventListener('click', exportBackup);
     $('importBackupBtn')?.addEventListener('click', () => $('backupFileInput')?.click());
     $('backupFileInput')?.addEventListener('change', (event) => {
@@ -443,7 +461,7 @@
   function initClient() {
     if (!isCloudConfigured()) {
       setCloudControls(false);
-      setState('Local only', 'warn');
+      setState('로컬 모드', 'warn');
       return;
     }
     if (!window.supabase || !window.supabase.createClient) {
@@ -463,10 +481,10 @@
       const user = getUser();
       setCloudControls(Boolean(user));
       if (user) {
-        setState(user.email || 'Google 연결됨', 'online');
+        setState('동기화 켜짐', 'online');
         syncWithCloud({ silent: true });
       } else {
-        setState('Google 로그인 필요', 'warn');
+        setState('로그인 필요', 'warn');
       }
     });
     refreshSession().then(() => {

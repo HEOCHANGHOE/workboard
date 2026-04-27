@@ -2196,6 +2196,7 @@ body::before {
   justify-content: flex-end;
   gap: 6px;
   flex-wrap: wrap;
+  position: relative;
 }
 .sync-state {
   max-width: 180px;
@@ -2239,6 +2240,27 @@ body::before {
   color: #fff;
   background: var(--blue);
   border-color: var(--blue);
+}
+.sync-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.96);
+  box-shadow: var(--shadow);
+}
+.sync-menu[hidden] {
+  display: none !important;
+}
+.sync-menu .sync-btn {
+  width: 100%;
 }
 
 @media (max-width: 760px) {
@@ -2285,6 +2307,15 @@ body::before {
     padding: 8px 6px;
     font-size: 12px;
     text-align: center;
+  }
+  .sync-menu {
+    position: static;
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    box-shadow: none;
+    background: rgba(255,255,255,0.7);
   }
   .nav-time,
   .nav-live {
