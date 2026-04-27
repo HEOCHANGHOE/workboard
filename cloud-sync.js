@@ -14,6 +14,7 @@
   ];
   const SNAPSHOT_VERSION = 1;
   const LOCAL_UPDATED_KEY = 'work_board_local_updated_at';
+  const APPLIED_HASH_KEY = 'work_board_applied_snapshot_hash';
   const CONFIG = window.WORK_BOARD_CONFIG || {};
   const PLACEHOLDER_URL = 'https://YOUR-PROJECT-REF.supabase.co';
   const AUTO_SYNC_INTERVAL_MS = 8000;
@@ -162,6 +163,18 @@
     return JSON.stringify((a && a.data) || {}) === JSON.stringify((b && b.data) || {});
   }
 
+  function snapshotDataHash(snapshot) {
+    return JSON.stringify((snapshot && snapshot.data) || {});
+  }
+
+  function reloadOnceForSnapshot(snapshot) {
+    const hash = snapshotDataHash(snapshot);
+    if (!hash || sessionStorage.getItem(APPLIED_HASH_KEY) === hash) return false;
+    sessionStorage.setItem(APPLIED_HASH_KEY, hash);
+    window.setTimeout(() => window.location.reload(), 250);
+    return true;
+  }
+
   function applySnapshot(snapshot) {
     if (!snapshot || !snapshot.data || typeof snapshot.data !== 'object') {
       throw new Error('올바른 Work Board 백업 파일이 아닙니다.');
@@ -281,7 +294,9 @@
       }
       if (localChanged) {
         setState('클라우드 동기화됨', 'online');
-        window.setTimeout(() => window.location.reload(), 250);
+        if (!reloadOnceForSnapshot(merged)) {
+          setState('동기화됨 · 새로고침 생략', 'online');
+        }
       } else if (!options.silent) {
         setState('클라우드 최신 상태', 'online');
       }
@@ -394,7 +409,7 @@
         suppressUpload = true;
         applySnapshot(remote.payload);
         suppressUpload = false;
-        window.location.reload();
+        reloadOnceForSnapshot(remote.payload);
         return;
       }
       if (remoteUpdated > localUpdated + 1000) {
