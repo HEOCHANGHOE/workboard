@@ -1,0 +1,340 @@
+// Backup and Supabase cloud sync layer.
+(function () {
+  'use strict';
+
+  const DATA_KEYS = [
+    'work_dashboard_tasks_v1',
+    'work_weekly_history_v1',
+    'work_monthly_history_v1',
+    'work_project_order_v1',
+    'work_project_collapse_v1',
+    'wt_rec',
+    'wt_live',
+    'wb_tweaks_v22'
+  ];
+  const SNAPSHOT_VERSION = 1;
+  const LOCAL_UPDATED_KEY = 'work_board_local_updated_at';
+  const CONFIG = window.WORK_BOARD_CONFIG || {};
+  const PLACEHOLDER_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+  let client = null;
+  let session = null;
+  let uploadTimer = null;
+  let suppressUpload = false;
+
+  const originalSetItem = Storage.prototype.setItem;
+  const originalRemoveItem = Storage.prototype.removeItem;
+
+  function isCloudConfigured() {
+    return Boolean(
+      CONFIG.supabaseUrl &&
+      CONFIG.supabaseAnonKey &&
+      CONFIG.supabaseUrl !== PLACEHOLDER_URL &&
+      CONFIG.supabaseAnonKey !== 'YOUR-SUPABASE-ANON-KEY'
+    );
+  }
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function setState(text, mode) {
+    const el = $('syncState');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('online', 'warn', 'error');
+    if (mode) el.classList.add(mode);
+  }
+
+  function setCloudControls(isSignedIn) {
+    const login = $('googleLoginBtn');
+    const logout = $('logoutBtn');
+    const pull = $('cloudPullBtn');
+    const push = $('cloudPushBtn');
+    if (login) login.hidden = isSignedIn || !isCloudConfigured();
+    if (logout) logout.hidden = !isSignedIn;
+    if (pull) pull.hidden = !isSignedIn;
+    if (push) push.hidden = !isSignedIn;
+  }
+
+  function markLocalUpdated() {
+    originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, new Date().toISOString());
+  }
+
+  function getLocalUpdatedAt() {
+    return localStorage.getItem(LOCAL_UPDATED_KEY) || null;
+  }
+
+  function readJsonKey(key) {
+    const raw = localStorage.getItem(key);
+    if (raw == null) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      return raw;
+    }
+  }
+
+  function buildSnapshot() {
+    const data = {};
+    DATA_KEYS.forEach((key) => {
+      data[key] = readJsonKey(key);
+    });
+    return {
+      app: 'work-board',
+      version: SNAPSHOT_VERSION,
+      exportedAt: new Date().toISOString(),
+      localUpdatedAt: getLocalUpdatedAt(),
+      data
+    };
+  }
+
+  function applySnapshot(snapshot) {
+    if (!snapshot || !snapshot.data || typeof snapshot.data !== 'object') {
+      throw new Error('올바른 Work Board 백업 파일이 아닙니다.');
+    }
+    suppressUpload = true;
+    DATA_KEYS.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(snapshot.data, key)) {
+        const value = snapshot.data[key];
+        if (value == null) originalRemoveItem.call(localStorage, key);
+        else originalSetItem.call(localStorage, key, typeof value === 'string' ? value : JSON.stringify(value));
+      }
+    });
+    originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, snapshot.localUpdatedAt || snapshot.exportedAt || new Date().toISOString());
+    suppressUpload = false;
+  }
+
+  function exportBackup() {
+    const snapshot = buildSnapshot();
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const date = new Date().toISOString().slice(0, 10);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `work-board-backup-${date}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setState('백업 저장됨', 'online');
+  }
+
+  function importBackup(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const snapshot = JSON.parse(String(reader.result || '{}'));
+        applySnapshot(snapshot);
+        setState('백업 복원됨', 'online');
+        window.setTimeout(() => window.location.reload(), 250);
+      } catch (error) {
+        alert(error.message || '백업 파일을 읽을 수 없습니다.');
+        setState('복원 실패', 'error');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function getUser() {
+    return session && session.user ? session.user : null;
+  }
+
+  async function fetchRemoteSnapshot() {
+    const user = getUser();
+    if (!client || !user) return null;
+    const { data, error } = await client
+      .from('work_board_snapshots')
+      .select('payload, updated_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async function pushToCloud() {
+    const user = getUser();
+    if (!client || !user) return;
+    const snapshot = buildSnapshot();
+    const now = new Date().toISOString();
+    const { error } = await client
+      .from('work_board_snapshots')
+      .upsert({
+        user_id: user.id,
+        payload: snapshot,
+        updated_at: now
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
+    setState('클라우드 저장됨', 'online');
+  }
+
+  async function pullFromCloud(force) {
+    try {
+      const remote = await fetchRemoteSnapshot();
+      if (!remote || !remote.payload) {
+        setState('클라우드 비어 있음', 'warn');
+        return;
+      }
+      if (!force && !confirm('클라우드 데이터를 이 기기에 덮어쓸까요?')) return;
+      applySnapshot(remote.payload);
+      originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.exportedAt || new Date().toISOString());
+      setState('클라우드 불러옴', 'online');
+      window.setTimeout(() => window.location.reload(), 250);
+    } catch (error) {
+      console.error(error);
+      setState('불러오기 실패', 'error');
+      alert(error.message || '클라우드 데이터를 불러오지 못했습니다.');
+    }
+  }
+
+  function scheduleCloudUpload() {
+    if (suppressUpload || !client || !getUser()) return;
+    window.clearTimeout(uploadTimer);
+    uploadTimer = window.setTimeout(() => {
+      pushToCloud().catch((error) => {
+        console.error(error);
+        setState('동기화 실패', 'error');
+      });
+    }, 900);
+  }
+
+  function patchLocalStorage() {
+    Storage.prototype.setItem = function patchedSetItem(key, value) {
+      originalSetItem.call(this, key, value);
+      if (DATA_KEYS.includes(key)) {
+        markLocalUpdated();
+        scheduleCloudUpload();
+      }
+    };
+    Storage.prototype.removeItem = function patchedRemoveItem(key) {
+      originalRemoveItem.call(this, key);
+      if (DATA_KEYS.includes(key)) {
+        markLocalUpdated();
+        scheduleCloudUpload();
+      }
+    };
+  }
+
+  async function signInWithGoogle() {
+    if (!client) {
+      setState('설정 필요', 'warn');
+      alert('config.js에 Supabase URL과 anon key를 먼저 입력하세요.');
+      return;
+    }
+    const redirectTo = CONFIG.redirectUrl || (window.location.origin + window.location.pathname);
+    const { error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+    if (error) {
+      console.error(error);
+      setState('로그인 실패', 'error');
+      alert(error.message || 'Google 로그인을 시작하지 못했습니다.');
+    }
+  }
+
+  async function signOut() {
+    if (!client) return;
+    await client.auth.signOut();
+    session = null;
+    setCloudControls(false);
+    setState('Local', 'warn');
+  }
+
+  async function refreshSession() {
+    if (!client) return;
+    const result = await client.auth.getSession();
+    session = result.data.session;
+    const user = getUser();
+    setCloudControls(Boolean(user));
+    if (user) {
+      const label = user.email ? user.email : 'Google 연결됨';
+      setState(label, 'online');
+    } else {
+      setState('Google 로그인 필요', 'warn');
+    }
+  }
+
+  async function checkRemoteFreshness() {
+    if (!client || !getUser()) return;
+    try {
+      const remote = await fetchRemoteSnapshot();
+      if (!remote || !remote.payload) return;
+      const localUpdated = Date.parse(getLocalUpdatedAt() || '1970-01-01T00:00:00.000Z');
+      const remoteUpdated = Date.parse(remote.updated_at || remote.payload.exportedAt || '1970-01-01T00:00:00.000Z');
+      const localEmpty = DATA_KEYS.every((key) => localStorage.getItem(key) == null);
+      if (localEmpty) {
+        applySnapshot(remote.payload);
+        window.location.reload();
+        return;
+      }
+      if (remoteUpdated > localUpdated + 1000) {
+        setState('클라우드 최신 데이터 있음', 'warn');
+      }
+    } catch (error) {
+      console.error(error);
+      setState('동기화 확인 실패', 'error');
+    }
+  }
+
+  function bindUi() {
+    $('exportBackupBtn')?.addEventListener('click', exportBackup);
+    $('importBackupBtn')?.addEventListener('click', () => $('backupFileInput')?.click());
+    $('backupFileInput')?.addEventListener('change', (event) => {
+      importBackup(event.target.files && event.target.files[0]);
+      event.target.value = '';
+    });
+    $('googleLoginBtn')?.addEventListener('click', signInWithGoogle);
+    $('logoutBtn')?.addEventListener('click', signOut);
+    $('cloudPushBtn')?.addEventListener('click', () => {
+      pushToCloud().catch((error) => {
+        console.error(error);
+        setState('올리기 실패', 'error');
+        alert(error.message || '클라우드 저장에 실패했습니다.');
+      });
+    });
+    $('cloudPullBtn')?.addEventListener('click', () => pullFromCloud(false));
+  }
+
+  function initClient() {
+    if (!isCloudConfigured()) {
+      setCloudControls(false);
+      setState('Local only', 'warn');
+      return;
+    }
+    if (!window.supabase || !window.supabase.createClient) {
+      setCloudControls(false);
+      setState('Supabase 로드 실패', 'error');
+      return;
+    }
+    client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+    client.auth.onAuthStateChange((_event, nextSession) => {
+      session = nextSession;
+      const user = getUser();
+      setCloudControls(Boolean(user));
+      if (user) {
+        setState(user.email || 'Google 연결됨', 'online');
+        checkRemoteFreshness();
+      } else {
+        setState('Google 로그인 필요', 'warn');
+      }
+    });
+    refreshSession().then(checkRemoteFreshness).catch((error) => {
+      console.error(error);
+      setState('로그인 확인 실패', 'error');
+    });
+  }
+
+  patchLocalStorage();
+  window.addEventListener('DOMContentLoaded', () => {
+    bindUi();
+    initClient();
+  });
+})();

@@ -15,6 +15,16 @@
         Work Board
       </div>
       <div class="nav-right">
+        <div class="sync-tools" id="syncTools">
+          <span class="sync-state" id="syncState">Local</span>
+          <button type="button" class="sync-btn" id="exportBackupBtn">내보내기</button>
+          <button type="button" class="sync-btn" id="importBackupBtn">가져오기</button>
+          <button type="button" class="sync-btn primary" id="googleLoginBtn">Google 로그인</button>
+          <button type="button" class="sync-btn" id="cloudPullBtn" hidden>불러오기</button>
+          <button type="button" class="sync-btn" id="cloudPushBtn" hidden>올리기</button>
+          <button type="button" class="sync-btn" id="logoutBtn" hidden>로그아웃</button>
+          <input type="file" id="backupFileInput" accept="application/json,.json" hidden />
+        </div>
         <div id="navTime" class="nav-time">
         </div>
         <div class="nav-live">
@@ -1244,6 +1254,9 @@
         </select>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="cloud-sync.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
