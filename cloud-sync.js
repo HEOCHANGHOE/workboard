@@ -16,9 +16,12 @@
   const LOCAL_UPDATED_KEY = 'work_board_local_updated_at';
   const CONFIG = window.WORK_BOARD_CONFIG || {};
   const PLACEHOLDER_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+  const AUTO_SYNC_INTERVAL_MS = 8000;
   let client = null;
   let session = null;
   let uploadTimer = null;
+  let syncTimer = null;
+  let isSyncing = false;
   let suppressUpload = false;
 
   const originalSetItem = Storage.prototype.setItem;
@@ -111,6 +114,54 @@
     };
   }
 
+  function arrayById(value) {
+    return Array.isArray(value) ? value.filter((item) => item && item.id != null) : [];
+  }
+
+  function mergeArrayById(remoteValue, localValue) {
+    const map = new Map();
+    arrayById(remoteValue).forEach((item) => map.set(String(item.id), item));
+    arrayById(localValue).forEach((item) => map.set(String(item.id), item));
+    return Array.from(map.values());
+  }
+
+  function mergeUniqueArray(remoteValue, localValue) {
+    return Array.from(new Set([
+      ...(Array.isArray(remoteValue) ? remoteValue : []),
+      ...(Array.isArray(localValue) ? localValue : [])
+    ].filter((item) => item != null && String(item).trim() !== '')));
+  }
+
+  function mergeObjects(remoteValue, localValue) {
+    const remoteObject = remoteValue && typeof remoteValue === 'object' && !Array.isArray(remoteValue) ? remoteValue : {};
+    const localObject = localValue && typeof localValue === 'object' && !Array.isArray(localValue) ? localValue : {};
+    return Object.assign({}, remoteObject, localObject);
+  }
+
+  function mergeSnapshots(localSnapshot, remoteSnapshot) {
+    const localData = (localSnapshot && localSnapshot.data) || {};
+    const remoteData = (remoteSnapshot && remoteSnapshot.data) || {};
+    const data = Object.assign({}, remoteData, localData);
+    data.work_dashboard_tasks_v1 = mergeArrayById(remoteData.work_dashboard_tasks_v1, localData.work_dashboard_tasks_v1);
+    data.work_weekly_history_v1 = mergeArrayById(remoteData.work_weekly_history_v1, localData.work_weekly_history_v1);
+    data.work_monthly_history_v1 = mergeArrayById(remoteData.work_monthly_history_v1, localData.work_monthly_history_v1);
+    data.work_project_order_v1 = mergeUniqueArray(remoteData.work_project_order_v1, localData.work_project_order_v1);
+    data.work_project_collapse_v1 = mergeUniqueArray(remoteData.work_project_collapse_v1, localData.work_project_collapse_v1);
+    data.wt_rec = mergeObjects(remoteData.wt_rec, localData.wt_rec);
+    data.wb_tweaks_v22 = mergeObjects(remoteData.wb_tweaks_v22, localData.wb_tweaks_v22);
+    return {
+      app: 'work-board',
+      version: SNAPSHOT_VERSION,
+      exportedAt: new Date().toISOString(),
+      localUpdatedAt: new Date().toISOString(),
+      data
+    };
+  }
+
+  function sameSnapshotData(a, b) {
+    return JSON.stringify((a && a.data) || {}) === JSON.stringify((b && b.data) || {});
+  }
+
   function applySnapshot(snapshot) {
     if (!snapshot || !snapshot.data || typeof snapshot.data !== 'object') {
       throw new Error('올바른 Work Board 백업 파일이 아닙니다.');
@@ -178,7 +229,11 @@
   async function pushToCloud() {
     const user = getUser();
     if (!client || !user) return;
-    const snapshot = buildSnapshot();
+    const localSnapshot = buildSnapshot();
+    const remote = await fetchRemoteSnapshot();
+    const snapshot = remote && remote.payload
+      ? mergeSnapshots(localSnapshot, remote.payload)
+      : localSnapshot;
     const now = new Date().toISOString();
     const { error } = await client
       .from('work_board_snapshots')
@@ -188,8 +243,54 @@
         updated_at: now
       }, { onConflict: 'user_id' });
     if (error) throw error;
+    if (!sameSnapshotData(localSnapshot, snapshot)) {
+      applySnapshot(snapshot);
+    }
     originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
     setState('클라우드 저장됨', 'online');
+  }
+
+  async function syncWithCloud(options = {}) {
+    const user = getUser();
+    if (!client || !user || isSyncing) return;
+    isSyncing = true;
+    try {
+      const localSnapshot = buildSnapshot();
+      const remote = await fetchRemoteSnapshot();
+      if (!remote || !remote.payload) {
+        if (snapshotHasMeaningfulData(localSnapshot)) await pushToCloud();
+        return;
+      }
+      const merged = mergeSnapshots(localSnapshot, remote.payload);
+      const localChanged = !sameSnapshotData(localSnapshot, merged);
+      const remoteChanged = !sameSnapshotData(remote.payload, merged);
+      if (localChanged) {
+        applySnapshot(merged);
+      }
+      if (remoteChanged) {
+        const now = new Date().toISOString();
+        const { error } = await client
+          .from('work_board_snapshots')
+          .upsert({
+            user_id: user.id,
+            payload: merged,
+            updated_at: now
+          }, { onConflict: 'user_id' });
+        if (error) throw error;
+        originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
+      }
+      if (localChanged) {
+        setState('클라우드 동기화됨', 'online');
+        window.setTimeout(() => window.location.reload(), 250);
+      } else if (!options.silent) {
+        setState('클라우드 최신 상태', 'online');
+      }
+    } catch (error) {
+      console.error(error);
+      setState('동기화 실패', 'error');
+    } finally {
+      isSyncing = false;
+    }
   }
 
   async function pullFromCloud(force) {
@@ -200,7 +301,8 @@
         return;
       }
       if (!force && !confirm('클라우드 데이터를 이 기기에 덮어쓸까요?')) return;
-      applySnapshot(remote.payload);
+      const merged = mergeSnapshots(buildSnapshot(), remote.payload);
+      applySnapshot(merged);
       originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.exportedAt || new Date().toISOString());
       setState('클라우드 불러옴', 'online');
       window.setTimeout(() => window.location.reload(), 250);
@@ -296,7 +398,7 @@
         return;
       }
       if (remoteUpdated > localUpdated + 1000) {
-        setState('클라우드 최신 데이터 있음', 'warn');
+        syncWithCloud({ silent: true });
       }
     } catch (error) {
       console.error(error);
@@ -347,12 +449,16 @@
       setCloudControls(Boolean(user));
       if (user) {
         setState(user.email || 'Google 연결됨', 'online');
-        checkRemoteFreshness();
+        syncWithCloud({ silent: true });
       } else {
         setState('Google 로그인 필요', 'warn');
       }
     });
-    refreshSession().then(checkRemoteFreshness).catch((error) => {
+    refreshSession().then(() => {
+      checkRemoteFreshness();
+      window.clearInterval(syncTimer);
+      syncTimer = window.setInterval(() => syncWithCloud({ silent: true }), AUTO_SYNC_INTERVAL_MS);
+    }).catch((error) => {
       console.error(error);
       setState('로그인 확인 실패', 'error');
     });
