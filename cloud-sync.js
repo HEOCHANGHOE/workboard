@@ -15,6 +15,7 @@
   const SNAPSHOT_VERSION = 1;
   const LOCAL_UPDATED_KEY = 'work_board_local_updated_at';
   const APPLIED_HASH_KEY = 'work_board_applied_snapshot_hash';
+  const ACTIVE_TAB_KEY = 'work_board_active_tab';
   const CONFIG = window.WORK_BOARD_CONFIG || {};
   const PLACEHOLDER_URL = 'https://YOUR-PROJECT-REF.supabase.co';
   const AUTO_SYNC_INTERVAL_MS = 8000;
@@ -167,10 +168,16 @@
     return JSON.stringify((snapshot && snapshot.data) || {});
   }
 
+  function rememberActiveTab() {
+    const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
+    if (activeTab) sessionStorage.setItem(ACTIVE_TAB_KEY, activeTab);
+  }
+
   function reloadOnceForSnapshot(snapshot) {
     const hash = snapshotDataHash(snapshot);
     if (!hash || sessionStorage.getItem(APPLIED_HASH_KEY) === hash) return false;
     sessionStorage.setItem(APPLIED_HASH_KEY, hash);
+    rememberActiveTab();
     window.setTimeout(() => window.location.reload(), 250);
     return true;
   }
@@ -214,6 +221,7 @@
         const snapshot = JSON.parse(String(reader.result || '{}'));
         applySnapshot(snapshot);
         setState('복원됨', 'online');
+        rememberActiveTab();
         window.setTimeout(() => window.location.reload(), 250);
       } catch (error) {
         alert(error.message || '백업 파일을 읽을 수 없습니다.');
@@ -320,6 +328,7 @@
       applySnapshot(merged);
       originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.exportedAt || new Date().toISOString());
       setState('불러옴', 'online');
+      rememberActiveTab();
       window.setTimeout(() => window.location.reload(), 250);
     } catch (error) {
       console.error(error);
