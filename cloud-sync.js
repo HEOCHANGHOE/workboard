@@ -134,34 +134,12 @@
     ].filter((item) => item != null && String(item).trim() !== '')));
   }
 
-  function mergeObjects(remoteValue, localValue) {
-    const remoteObject = remoteValue && typeof remoteValue === 'object' && !Array.isArray(remoteValue) ? remoteValue : {};
-    const localObject = localValue && typeof localValue === 'object' && !Array.isArray(localValue) ? localValue : {};
-    return Object.assign({}, remoteObject, localObject);
-  }
-
-  function mergeSnapshots(localSnapshot, remoteSnapshot) {
-    const localData = (localSnapshot && localSnapshot.data) || {};
-    const remoteData = (remoteSnapshot && remoteSnapshot.data) || {};
-    const data = Object.assign({}, remoteData, localData);
-    data.work_dashboard_tasks_v1 = mergeArrayById(remoteData.work_dashboard_tasks_v1, localData.work_dashboard_tasks_v1);
-    data.work_weekly_history_v1 = mergeArrayById(remoteData.work_weekly_history_v1, localData.work_weekly_history_v1);
-    data.work_monthly_history_v1 = mergeArrayById(remoteData.work_monthly_history_v1, localData.work_monthly_history_v1);
-    data.work_project_order_v1 = mergeUniqueArray(remoteData.work_project_order_v1, localData.work_project_order_v1);
-    data.work_project_collapse_v1 = mergeUniqueArray(remoteData.work_project_collapse_v1, localData.work_project_collapse_v1);
-    data.wt_rec = mergeObjects(remoteData.wt_rec, localData.wt_rec);
-    data.wb_tweaks_v22 = mergeObjects(remoteData.wb_tweaks_v22, localData.wb_tweaks_v22);
-    return {
-      app: 'work-board',
-      version: SNAPSHOT_VERSION,
-      exportedAt: new Date().toISOString(),
-      localUpdatedAt: new Date().toISOString(),
-      data
-    };
-  }
-
   function sameSnapshotData(a, b) {
     return JSON.stringify((a && a.data) || {}) === JSON.stringify((b && b.data) || {});
+  }
+
+  function snapshotUpdatedTime(snapshot, fallback) {
+    return Date.parse((snapshot && (snapshot.localUpdatedAt || snapshot.exportedAt)) || fallback || '1970-01-01T00:00:00.000Z') || 0;
   }
 
   function snapshotDataHash(snapshot) {
@@ -173,12 +151,21 @@
     if (activeTab) sessionStorage.setItem(ACTIVE_TAB_KEY, activeTab);
   }
 
-  function reloadOnceForSnapshot(snapshot) {
+  function refreshAfterSnapshot(snapshot) {
     const hash = snapshotDataHash(snapshot);
     if (!hash || sessionStorage.getItem(APPLIED_HASH_KEY) === hash) return false;
     sessionStorage.setItem(APPLIED_HASH_KEY, hash);
     rememberActiveTab();
-    window.setTimeout(() => window.location.reload(), 250);
+    if (window.WorkBoardApp && typeof window.WorkBoardApp.refreshFromStorage === 'function') {
+      suppressUpload = true;
+      try {
+        window.WorkBoardApp.refreshFromStorage();
+      } finally {
+        suppressUpload = false;
+      }
+    } else {
+      window.setTimeout(() => window.location.reload(), 250);
+    }
     return true;
   }
 
@@ -222,7 +209,7 @@
         applySnapshot(snapshot);
         setState('복원됨', 'online');
         rememberActiveTab();
-        window.setTimeout(() => window.location.reload(), 250);
+        refreshAfterSnapshot(snapshot);
       } catch (error) {
         alert(error.message || '백업 파일을 읽을 수 없습니다.');
         setState('복원 실패', 'error');
@@ -251,22 +238,17 @@
     const user = getUser();
     if (!client || !user) return;
     const localSnapshot = buildSnapshot();
-    const remote = await fetchRemoteSnapshot();
-    const snapshot = remote && remote.payload
-      ? mergeSnapshots(localSnapshot, remote.payload)
-      : localSnapshot;
     const now = new Date().toISOString();
+    localSnapshot.localUpdatedAt = getLocalUpdatedAt() || now;
+    localSnapshot.exportedAt = now;
     const { error } = await client
       .from('work_board_snapshots')
       .upsert({
         user_id: user.id,
-        payload: snapshot,
+        payload: localSnapshot,
         updated_at: now
       }, { onConflict: 'user_id' });
     if (error) throw error;
-    if (!sameSnapshotData(localSnapshot, snapshot)) {
-      applySnapshot(snapshot);
-    }
     originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
     setState('저장됨', 'online');
   }
@@ -282,29 +264,15 @@
         if (snapshotHasMeaningfulData(localSnapshot)) await pushToCloud();
         return;
       }
-      const merged = mergeSnapshots(localSnapshot, remote.payload);
-      const localChanged = !sameSnapshotData(localSnapshot, merged);
-      const remoteChanged = !sameSnapshotData(remote.payload, merged);
-      if (localChanged) {
-        applySnapshot(merged);
-      }
-      if (remoteChanged) {
-        const now = new Date().toISOString();
-        const { error } = await client
-          .from('work_board_snapshots')
-          .upsert({
-            user_id: user.id,
-            payload: merged,
-            updated_at: now
-          }, { onConflict: 'user_id' });
-        if (error) throw error;
-        originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
-      }
-      if (localChanged) {
+      const localTime = snapshotUpdatedTime(localSnapshot, getLocalUpdatedAt());
+      const remoteTime = snapshotUpdatedTime(remote.payload, remote.updated_at);
+      if (remoteTime > localTime + 1000 && !sameSnapshotData(localSnapshot, remote.payload)) {
+        applySnapshot(remote.payload);
+        originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.localUpdatedAt || remote.payload.exportedAt || new Date().toISOString());
         setState('최신 상태', 'online');
-        if (!reloadOnceForSnapshot(merged)) {
-          setState('최신 상태', 'online');
-        }
+        refreshAfterSnapshot(remote.payload);
+      } else if (localTime > remoteTime + 1000 && !sameSnapshotData(localSnapshot, remote.payload)) {
+        await pushToCloud();
       } else if (!options.silent) {
         setState('최신 상태', 'online');
       }
@@ -324,12 +292,10 @@
         return;
       }
       if (!force && !confirm('클라우드 데이터를 이 기기에 덮어쓸까요?')) return;
-      const merged = mergeSnapshots(buildSnapshot(), remote.payload);
-      applySnapshot(merged);
+      applySnapshot(remote.payload);
       originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.exportedAt || new Date().toISOString());
       setState('불러옴', 'online');
-      rememberActiveTab();
-      window.setTimeout(() => window.location.reload(), 250);
+      refreshAfterSnapshot(remote.payload);
     } catch (error) {
       console.error(error);
       setState('불러오기 실패', 'error');
@@ -348,6 +314,20 @@
     }, 900);
   }
 
+  function scheduleLocalRefreshFromStorage() {
+    window.clearTimeout(window.workBoardStorageRefreshTimer);
+    window.workBoardStorageRefreshTimer = window.setTimeout(() => {
+      if (window.WorkBoardApp && typeof window.WorkBoardApp.refreshFromStorage === 'function') {
+        suppressUpload = true;
+        try {
+          window.WorkBoardApp.refreshFromStorage();
+        } finally {
+          suppressUpload = false;
+        }
+      }
+    }, 120);
+  }
+
   function patchLocalStorage() {
     Storage.prototype.setItem = function patchedSetItem(key, value) {
       originalSetItem.call(this, key, value);
@@ -363,6 +343,9 @@
         scheduleCloudUpload();
       }
     };
+    window.addEventListener('storage', (event) => {
+      if (DATA_KEYS.includes(event.key)) scheduleLocalRefreshFromStorage();
+    });
   }
 
   async function signInWithGoogle() {
@@ -417,7 +400,7 @@
         suppressUpload = true;
         applySnapshot(remote.payload);
         suppressUpload = false;
-        reloadOnceForSnapshot(remote.payload);
+        refreshAfterSnapshot(remote.payload);
         return;
       }
       if (remoteUpdated > localUpdated + 1000) {
