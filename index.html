@@ -6,7 +6,7 @@
     <title>
       Work Board
     </title>
-    <link rel="stylesheet" href="style.css?v=20260427-6" />
+    <link rel="stylesheet" href="style.css?v=20260512-1" />
   </head>
   <body>
     <!-- Top navigation: title, live status, and current time. -->
@@ -149,8 +149,8 @@
     <div class="wrap">
       <!-- Home page: quick task entry, priority lists, KPIs, and charts. -->
       <section class="page active" id="page-home">
-        <div class="grid-2">
-          <div class="card">
+        <div class="grid-2 home-layout">
+          <div class="card new-task-card">
             <div class="card-head">
               <div class="card-title">
                 New Task
@@ -163,6 +163,14 @@
                   업무명
                 </label>
                 <input id="taskName" class="input" type="text" placeholder="업무 내용을 입력하세요" />
+              </div>
+              <div class="field">
+                <label class="label" for="taskProject">
+                  프로젝트
+                </label>
+                <input id="taskProject" class="input" type="text" list="taskProjectList" placeholder="프로젝트명 또는 분류명" />
+                <datalist id="taskProjectList">
+                </datalist>
               </div>
               <div class="form-grid">
                 <div class="field">
@@ -305,7 +313,7 @@
               </div>
             </div>
           </div>
-          <div>
+          <div class="home-priority-column">
             <div class="card">
               <div class="card-head">
                 <div class="card-title">
@@ -315,7 +323,7 @@
               <div class="list-box" id="todayList">
               </div>
             </div>
-            <div class="grid-2" style="grid-template-columns: 1fr 1fr;">
+            <div class="grid-2 alert-grid" style="grid-template-columns: 1fr 1fr;">
               <div class="card" style="margin-bottom:0;">
                 <div class="card-head">
                   <div class="card-title">
@@ -1204,6 +1212,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js?v=20260428-1"></script>
     <script src="cloud-sync.js?v=20260511-2"></script>
-    <script src="app.js?v=20260511-1"></script>
+    <script src="app.js?v=20260512-1"></script>
   </body>
 </html>
