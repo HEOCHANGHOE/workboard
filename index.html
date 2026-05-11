@@ -168,9 +168,14 @@
                 <label class="label" for="taskProject">
                   프로젝트
                 </label>
-                <input id="taskProject" class="input" type="text" list="taskProjectList" placeholder="프로젝트명 또는 분류명" />
-                <datalist id="taskProjectList">
-                </datalist>
+                <div class="project-inline-row">
+                  <select id="taskProjectSelect" class="select">
+                    <option value="__new__">
+                      새로 입력
+                    </option>
+                  </select>
+                  <input id="taskProject" class="input" type="text" placeholder="프로젝트명" />
+                </div>
               </div>
               <div class="form-grid">
                 <div class="field">
@@ -1212,6 +1217,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js?v=20260428-1"></script>
     <script src="cloud-sync.js?v=20260511-2"></script>
-    <script src="app.js?v=20260512-1"></script>
+    <script src="app.js?v=20260512-2"></script>
   </body>
 </html>
