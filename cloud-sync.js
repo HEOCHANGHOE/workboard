@@ -234,10 +234,30 @@
     return data;
   }
 
+  function applyRemoteSnapshot(remote) {
+    if (!remote || !remote.payload) return false;
+    applySnapshot(remote.payload);
+    originalSetItem.call(
+      localStorage,
+      LOCAL_UPDATED_KEY,
+      remote.updated_at || remote.payload.localUpdatedAt || remote.payload.exportedAt || new Date().toISOString()
+    );
+    refreshAfterSnapshot(remote.payload);
+    return true;
+  }
+
   async function pushToCloud() {
     const user = getUser();
     if (!client || !user) return;
     const localSnapshot = buildSnapshot();
+    const remote = await fetchRemoteSnapshot();
+    const localHasData = snapshotHasMeaningfulData(localSnapshot);
+    const remoteHasData = snapshotHasMeaningfulData(remote && remote.payload);
+    if (!localHasData && remoteHasData) {
+      applyRemoteSnapshot(remote);
+      setState('최신 상태', 'online');
+      return;
+    }
     const now = new Date().toISOString();
     localSnapshot.localUpdatedAt = getLocalUpdatedAt() || now;
     localSnapshot.exportedAt = now;
@@ -264,13 +284,22 @@
         if (snapshotHasMeaningfulData(localSnapshot)) await pushToCloud();
         return;
       }
+      const localHasData = snapshotHasMeaningfulData(localSnapshot);
+      const remoteHasData = snapshotHasMeaningfulData(remote.payload);
+      if (!localHasData && remoteHasData && !sameSnapshotData(localSnapshot, remote.payload)) {
+        applyRemoteSnapshot(remote);
+        setState('최신 상태', 'online');
+        return;
+      }
+      if (localHasData && !remoteHasData && !sameSnapshotData(localSnapshot, remote.payload)) {
+        await pushToCloud();
+        return;
+      }
       const localTime = snapshotUpdatedTime(localSnapshot, getLocalUpdatedAt());
       const remoteTime = snapshotUpdatedTime(remote.payload, remote.updated_at);
       if (remoteTime > localTime + 1000 && !sameSnapshotData(localSnapshot, remote.payload)) {
-        applySnapshot(remote.payload);
-        originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, remote.updated_at || remote.payload.localUpdatedAt || remote.payload.exportedAt || new Date().toISOString());
+        applyRemoteSnapshot(remote);
         setState('최신 상태', 'online');
-        refreshAfterSnapshot(remote.payload);
       } else if (localTime > remoteTime + 1000 && !sameSnapshotData(localSnapshot, remote.payload)) {
         await pushToCloud();
       } else if (!options.silent) {
