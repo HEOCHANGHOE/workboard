@@ -2192,12 +2192,10 @@ body::before {
 .project-inline-row { display:grid; grid-template-columns: 140px 1fr; gap:8px; align-items:end; }
 @media (max-width: 760px) { .project-inline-row { grid-template-columns: 1fr; } }
 
-.today-list-item { grid-template-columns:auto minmax(0, 1fr); }
-.today-left-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.today-actions { display:flex; align-items:center; justify-content:flex-start; gap:8px; flex-wrap:wrap; }
+.today-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
 .today-edit-btn { white-space:nowrap; font-size:11.5px; }
 @media (max-width: 580px) {
-  .today-list-item { grid-template-columns:1fr; }
+  .today-actions { justify-content:flex-start; grid-column:2 / -1; }
 }
 
 .home-layout {
