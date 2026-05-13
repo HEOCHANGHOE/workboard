@@ -8,6 +8,7 @@
     'work_monthly_history_v1',
     'work_project_order_v1',
     'work_project_collapse_v1',
+    'work_project_notes_v1',
     'wt_rec',
     'wt_live',
     'wb_tweaks_v22'
@@ -82,6 +83,7 @@
     return !isEmptyArrayValue(snapshot.data.work_dashboard_tasks_v1) ||
       !isEmptyArrayValue(snapshot.data.work_weekly_history_v1) ||
       !isEmptyArrayValue(snapshot.data.work_monthly_history_v1) ||
+      !isEmptyObjectValue(snapshot.data.work_project_notes_v1) ||
       !isEmptyObjectValue(snapshot.data.wt_rec);
   }
 
@@ -89,6 +91,7 @@
     return !isEmptyArrayValue(readJsonKey('work_dashboard_tasks_v1')) ||
       !isEmptyArrayValue(readJsonKey('work_weekly_history_v1')) ||
       !isEmptyArrayValue(readJsonKey('work_monthly_history_v1')) ||
+      !isEmptyObjectValue(readJsonKey('work_project_notes_v1')) ||
       !isEmptyObjectValue(readJsonKey('wt_rec'));
   }
 
