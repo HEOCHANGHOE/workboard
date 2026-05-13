@@ -359,15 +359,17 @@
 
   function patchLocalStorage() {
     Storage.prototype.setItem = function patchedSetItem(key, value) {
+      const previous = this.getItem(key);
       originalSetItem.call(this, key, value);
-      if (DATA_KEYS.includes(key)) {
+      if (!suppressUpload && DATA_KEYS.includes(key) && previous !== value) {
         markLocalUpdated();
         scheduleCloudUpload();
       }
     };
     Storage.prototype.removeItem = function patchedRemoveItem(key) {
+      const previous = this.getItem(key);
       originalRemoveItem.call(this, key);
-      if (DATA_KEYS.includes(key)) {
+      if (!suppressUpload && DATA_KEYS.includes(key) && previous !== null) {
         markLocalUpdated();
         scheduleCloudUpload();
       }
@@ -512,6 +514,10 @@
       checkRemoteFreshness();
       window.clearInterval(syncTimer);
       syncTimer = window.setInterval(() => syncWithCloud({ silent: true }), AUTO_SYNC_INTERVAL_MS);
+      window.addEventListener('focus', () => syncWithCloud({ silent: true }));
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) syncWithCloud({ silent: true });
+      });
     }).catch((error) => {
       console.error(error);
       setState('로그인 확인 실패', 'error');
