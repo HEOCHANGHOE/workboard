@@ -2192,6 +2192,12 @@ body::before {
 .project-inline-row { display:grid; grid-template-columns: 140px 1fr; gap:8px; align-items:end; }
 @media (max-width: 760px) { .project-inline-row { grid-template-columns: 1fr; } }
 
+.today-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+.today-edit-btn { white-space:nowrap; font-size:11.5px; }
+@media (max-width: 580px) {
+  .today-actions { justify-content:flex-start; grid-column:2 / -1; }
+}
+
 .home-layout {
   grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
   align-items: stretch;

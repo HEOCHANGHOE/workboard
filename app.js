@@ -102,9 +102,12 @@
             <div class="task-name">${escapeHtml(task.name)}</div>
             <div class="task-meta">${escapeHtml(task.channel)} · ${escapeHtml(formatDueDisplay(task))} · ${escapeHtml(priority.text)}</div>
           </div>
-          <select class="status-badge today-status-select st-${escapeHtml(task.status)}" data-action="status-select" data-id="${escapeHtml(task.id)}">
-            ${STATUS_LIST.map((status) => `<option value="${escapeHtml(status)}" ${task.status === status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}
-          </select>
+          <div class="today-actions">
+            <select class="status-badge today-status-select st-${escapeHtml(task.status)}" data-action="status-select" data-id="${escapeHtml(task.id)}">
+              ${STATUS_LIST.map((status) => `<option value="${escapeHtml(status)}" ${task.status === status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}
+            </select>
+            <button type="button" class="text-link today-edit-btn" data-action="edit" data-id="${escapeHtml(task.id)}">빠른수정</button>
+          </div>
         </div>`;
     }).join('');
     setTimeout(() => { document.querySelectorAll('.today-status-select').forEach(styleStatusSelect); }, 20);
