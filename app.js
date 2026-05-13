@@ -96,17 +96,19 @@
 
       const priority = getPriorityDisplay(task);
       return `
-        <div class="list-item">
-          <span class="score-badge ${priority.cls}">${escapeHtml(priority.label)}</span>
-          <div style="min-width:0">
-            <div class="task-name">${escapeHtml(task.name)}</div>
-            <div class="task-meta">${escapeHtml(task.channel)} · ${escapeHtml(formatDueDisplay(task))} · ${escapeHtml(priority.text)}</div>
-          </div>
-          <div class="today-actions">
+        <div class="list-item today-list-item">
+          <div class="today-left-tools">
+            <span class="score-badge ${priority.cls}">${escapeHtml(priority.label)}</span>
+            <div class="today-actions">
             <select class="status-badge today-status-select st-${escapeHtml(task.status)}" data-action="status-select" data-id="${escapeHtml(task.id)}">
               ${STATUS_LIST.map((status) => `<option value="${escapeHtml(status)}" ${task.status === status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}
             </select>
             <button type="button" class="text-link today-edit-btn" data-action="edit" data-id="${escapeHtml(task.id)}">빠른수정</button>
+            </div>
+          </div>
+          <div style="min-width:0">
+            <div class="task-name">${escapeHtml(task.name)}</div>
+            <div class="task-meta">${escapeHtml(task.channel)} · ${escapeHtml(formatDueDisplay(task))} · ${escapeHtml(priority.text)}</div>
           </div>
         </div>`;
     }).join('');
