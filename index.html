@@ -6,7 +6,7 @@
     <title>
       Work Board
     </title>
-    <link rel="stylesheet" href="style.css?v=20260513-4" />
+    <link rel="stylesheet" href="style.css?v=20260514-1" />
   </head>
   <body>
     <!-- Top navigation: title, live status, and current time. -->
@@ -1112,7 +1112,7 @@
     </div>
     <!-- Project operation note modal: track ongoing project context. -->
     <div class="modal" id="projectNoteModal">
-      <div class="modal-box">
+      <div class="modal-box project-note-modal-box">
         <div class="modal-head">
           <div>
             <div class="modal-title" id="projectNoteTitle">
@@ -1128,48 +1128,134 @@
         </div>
         <div class="modal-body">
           <input type="hidden" id="projectNoteName" />
-          <div class="field">
-            <label class="label" for="projectNoteStatus">
-              상태
-            </label>
-            <select id="projectNoteStatus" class="select">
-              <option value="정상">
-                정상
-              </option>
-              <option value="주의">
-                주의
-              </option>
-              <option value="지연">
-                지연
-              </option>
-              <option value="보류">
-                보류
-              </option>
-            </select>
+          <div class="project-note-section">
+            <div class="project-note-section-title">
+              프로젝트 카드
+            </div>
+            <div class="field">
+              <label class="label" for="projectNoteGoal">
+                한 줄 목표
+              </label>
+              <textarea id="projectNoteGoal" class="textarea compact" placeholder="무엇을 언제까지 어떤 상태로 만들지 적습니다"></textarea>
+            </div>
+            <div class="project-note-grid">
+              <div class="field">
+                <label class="label" for="projectNoteStatus">
+                  상태
+                </label>
+                <select id="projectNoteStatus" class="select">
+                  <option value="정상">
+                    정상
+                  </option>
+                  <option value="주의">
+                    주의
+                  </option>
+                  <option value="지연">
+                    지연
+                  </option>
+                  <option value="보류">
+                    보류
+                  </option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="projectNoteOwner">
+                  담당
+                </label>
+                <input id="projectNoteOwner" class="input" type="text" placeholder="담당자" />
+              </div>
+              <div class="field">
+                <label class="label" for="projectNoteDueDate">
+                  마감일
+                </label>
+                <input id="projectNoteDueDate" class="input" type="date" />
+              </div>
+              <div class="field">
+                <label class="label" for="projectNoteReviewDate">
+                  다음 확인일
+                </label>
+                <input id="projectNoteReviewDate" class="input" type="date" />
+              </div>
+            </div>
           </div>
-          <div class="field">
-            <label class="label" for="projectNoteProgress">
-              현재 진행
-            </label>
-            <textarea id="projectNoteProgress" class="textarea compact" placeholder="현재 어디까지 진행됐는지 적습니다"></textarea>
+          <div class="project-note-section">
+            <div class="project-note-section-title">
+              실행 관리
+            </div>
+            <div class="project-note-grid">
+              <div class="field">
+                <label class="label" for="projectNoteProgress">
+                  현재 진행
+                </label>
+                <textarea id="projectNoteProgress" class="textarea compact" placeholder="현재 어디까지 진행됐는지 적습니다"></textarea>
+              </div>
+              <div class="field">
+                <label class="label" for="projectNoteNext">
+                  다음 액션
+                </label>
+                <textarea id="projectNoteNext" class="textarea compact" placeholder="다음에 해야 할 일을 적습니다"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="projectNoteFocus">
+                이번 주 집중
+              </label>
+              <textarea id="projectNoteFocus" class="textarea compact" placeholder="이번 주 가장 중요한 1~3개 작업을 적습니다"></textarea>
+            </div>
           </div>
-          <div class="field">
-            <label class="label" for="projectNoteNext">
-              다음 액션
-            </label>
-            <textarea id="projectNoteNext" class="textarea compact" placeholder="다음에 해야 할 일을 적습니다"></textarea>
+          <div class="project-note-section">
+            <div class="project-note-section-title">
+              작업 관리
+            </div>
+            <div class="project-mini-task-entry">
+              <select id="projectMiniTaskStatus" class="select">
+                <option value="미진행">
+                  미진행
+                </option>
+                <option value="진행중">
+                  진행중
+                </option>
+                <option value="대기">
+                  대기
+                </option>
+                <option value="완료">
+                  완료
+                </option>
+              </select>
+              <input id="projectMiniTaskTitle" class="input" type="text" placeholder="작업명" />
+              <input id="projectMiniTaskOwner" class="input" type="text" placeholder="담당" />
+              <input id="projectMiniTaskDueDate" class="input" type="date" />
+              <input id="projectMiniTaskMemo" class="input" type="text" placeholder="메모" />
+              <button class="btn btn-secondary project-mini-task-add" type="button" id="projectMiniTaskAdd">
+                추가
+              </button>
+            </div>
+            <div class="project-mini-task-list" id="projectMiniTasks"></div>
           </div>
-          <div class="field">
-            <label class="label" for="projectNoteIssue">
-              이슈
-            </label>
-            <textarea id="projectNoteIssue" class="textarea compact" placeholder="막히는 점이나 확인이 필요한 점을 적습니다"></textarea>
-          </div>
-          <div class="field">
-            <label class="label" for="projectNoteMemo">
-              메모
-            </label>
-            <textarea id="projectNoteMemo" class="textarea compact" placeholder="그 밖의 운영 메모를 적습니다"></textarea>
+          <div class="project-note-section">
+            <div class="project-note-section-title">
+              기록
+            </div>
+            <div class="project-note-grid">
+              <div class="field">
+                <label class="label" for="projectNoteDecision">
+                  결정 사항
+                </label>
+                <textarea id="projectNoteDecision" class="textarea compact" placeholder="날짜, 결정, 이유를 함께 적습니다"></textarea>
+              </div>
+              <div class="field">
+                <label class="label" for="projectNoteIssue">
+                  리스크 / 막힌 점
+                </label>
+                <textarea id="projectNoteIssue" class="textarea compact" placeholder="영향과 대응 방향을 함께 적습니다"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="projectNoteMemo">
+                운영 기록
+              </label>
+              <textarea id="projectNoteMemo" class="textarea compact" placeholder="날짜별 진행 메모를 적습니다"></textarea>
+            </div>
           </div>
         </div>
         <div class="modal-actions">
@@ -1286,8 +1372,9 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=20260428-1"></script>
+    <script src="config.js?v=20260514-1"></script>
     <script src="cloud-sync.js?v=20260513-3"></script>
     <script src="app.js?v=20260513-6"></script>
+    <script src="project-notes.js?v=20260514-2"></script>
   </body>
 </html>

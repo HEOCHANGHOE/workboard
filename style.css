@@ -2249,8 +2249,29 @@ body::before {
 .project-note-status.note-delay { color: var(--red); background: var(--red-bg); }
 .project-note-status.note-hold { color: var(--purple); background: var(--purple-bg); }
 .project-note-updated { font-size:10.5px; color: var(--text3); font-weight:700; }
+.project-note-chip { display:inline-flex; align-items:center; justify-content:center; padding:3px 7px; border-radius:9999px; color:var(--text2); background:var(--gray-bg); font-size:10px; font-weight:800; letter-spacing:0; }
+.project-note-chip.due { color:var(--orange); background:var(--orange-bg); }
 .project-note-btn { color: var(--blue); border-color: rgba(0,122,255,0.25); background: rgba(0,122,255,0.06); }
 .table tr.project-task-row td { background: transparent; }
+
+.project-note-modal-box { width: min(920px, 100%); }
+.project-note-section { padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--line-soft); }
+.project-note-section:first-child { padding-top: 0; margin-top: 0; border-top: 0; }
+.project-note-section-title { margin-bottom: 12px; font-size: 11px; font-weight: 800; color: var(--text3); letter-spacing: 0.04em; text-transform: uppercase; }
+.project-note-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.project-mini-task-entry { display:grid; grid-template-columns: 116px minmax(180px, 1.3fr) minmax(96px, 0.7fr) 142px minmax(140px, 1fr) auto; gap:8px; align-items:center; }
+.project-mini-task-add { min-height: 42px; padding-left: 16px; padding-right: 16px; white-space: nowrap; }
+.project-mini-task-list { display:grid; gap:8px; margin-top:12px; }
+.project-mini-task-row { display:grid; grid-template-columns: 106px minmax(180px, 1.3fr) minmax(86px, 0.7fr) 96px minmax(120px, 1fr) 34px; gap:8px; align-items:center; padding:9px; border:1px solid var(--line); border-radius:12px; background:var(--card-alt); }
+.project-mini-task-title { min-width:0; font-size:13px; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.project-mini-task-meta { min-width:0; font-size:12px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.project-mini-task-status { width:100%; border:0; border-radius:9999px; padding:6px 8px; font-size:11px; font-weight:800; outline:none; }
+.project-mini-task-status.status-미진행 { color:var(--gray); background:var(--gray-bg); }
+.project-mini-task-status.status-진행중 { color:var(--blue); background:var(--blue-bg); }
+.project-mini-task-status.status-대기 { color:var(--purple); background:var(--purple-bg); }
+.project-mini-task-status.status-완료 { color:var(--green); background:var(--green-bg); }
+.project-mini-task-delete { width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; color:var(--text3); background:transparent; font-size:16px; font-weight:700; }
+.project-mini-task-delete:hover { color:var(--red); background:var(--red-bg); }
 
 .textarea.compact { min-height: 76px; }
 
@@ -2417,6 +2438,16 @@ body::before {
   }
   .form-grid {
     grid-template-columns: 1fr;
+  }
+  .project-note-grid {
+    grid-template-columns: 1fr;
+  }
+  .project-mini-task-entry,
+  .project-mini-task-row {
+    grid-template-columns: 1fr;
+  }
+  .project-mini-task-delete {
+    justify-self: end;
   }
   .kpi-grid {
     grid-template-columns: 1fr 1fr;
