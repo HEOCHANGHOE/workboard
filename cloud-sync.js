@@ -17,6 +17,7 @@
   const LOCAL_UPDATED_KEY = 'work_board_local_updated_at';
   const APPLIED_HASH_KEY = 'work_board_applied_snapshot_hash';
   const ACTIVE_TAB_KEY = 'work_board_active_tab';
+  const PRE_SYNC_BACKUP_KEY = 'work_board_pre_sync_backup';
   const CONFIG = window.WORK_BOARD_CONFIG || {};
   const PLACEHOLDER_URL = 'https://YOUR-PROJECT-REF.supabase.co';
   const AUTO_SYNC_INTERVAL_MS = 8000;
@@ -172,6 +173,35 @@
     return true;
   }
 
+  function updateRestoreBtn() {
+    const btn = $('restorePreSyncBtn');
+    if (!btn) return;
+    btn.hidden = !localStorage.getItem(PRE_SYNC_BACKUP_KEY);
+  }
+
+  function savePreSyncBackup() {
+    if (!localHasMeaningfulData()) return;
+    const backup = buildSnapshot();
+    originalSetItem.call(localStorage, PRE_SYNC_BACKUP_KEY, JSON.stringify(backup));
+    updateRestoreBtn();
+  }
+
+  function restorePreSyncBackup() {
+    const raw = localStorage.getItem(PRE_SYNC_BACKUP_KEY);
+    if (!raw) return;
+    try {
+      const backup = JSON.parse(raw);
+      if (!confirm('동기화 전 상태로 되돌릴까요?')) return;
+      applySnapshot(backup);
+      originalRemoveItem.call(localStorage, PRE_SYNC_BACKUP_KEY);
+      updateRestoreBtn();
+      setState('되돌림', 'online');
+      refreshAfterSnapshot(backup);
+    } catch (e) {
+      alert('되돌리기 실패: ' + (e.message || e));
+    }
+  }
+
   function applySnapshot(snapshot) {
     if (!snapshot || !snapshot.data || typeof snapshot.data !== 'object') {
       throw new Error('올바른 Work Board 백업 파일이 아닙니다.');
@@ -239,6 +269,7 @@
 
   function applyRemoteSnapshot(remote) {
     if (!remote || !remote.payload) return false;
+    savePreSyncBackup();
     applySnapshot(remote.payload);
     originalSetItem.call(
       localStorage,
@@ -298,7 +329,7 @@
         await pushToCloud();
         return;
       }
-      const localTime = snapshotUpdatedTime(localSnapshot, getLocalUpdatedAt());
+      const localTime = Date.parse(getLocalUpdatedAt() || '1970-01-01T00:00:00.000Z') || 0;
       const remoteTime = snapshotUpdatedTime(remote.payload, remote.updated_at);
       if (remoteTime > localTime + 1000 && !sameSnapshotData(localSnapshot, remote.payload)) {
         applyRemoteSnapshot(remote);
@@ -466,6 +497,8 @@
       syncMenu.hidden = true;
       syncMenuBtn?.setAttribute('aria-expanded', 'false');
     });
+    $('restorePreSyncBtn')?.addEventListener('click', restorePreSyncBackup);
+    updateRestoreBtn();
     $('exportBackupBtn')?.addEventListener('click', exportBackup);
     $('importBackupBtn')?.addEventListener('click', () => $('backupFileInput')?.click());
     $('backupFileInput')?.addEventListener('change', (event) => {
