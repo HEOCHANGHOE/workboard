@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://zsysapxopcxaqvxaqpxe.supabase.co https://*.supabase.co; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" />
     <title>
       Work Board
     </title>
@@ -25,6 +26,7 @@
             <button type="button" class="sync-btn" id="exportBackupBtn">내보내기</button>
             <button type="button" class="sync-btn" id="importBackupBtn">가져오기</button>
             <button type="button" class="sync-btn" id="restoreSafetyBackupBtn">복구 지점</button>
+            <button type="button" class="sync-btn" id="userManageBtn" hidden>사용자 관리</button>
             <button type="button" class="sync-btn" id="cloudPullBtn" hidden>불러오기</button>
             <button type="button" class="sync-btn" id="cloudPushBtn" hidden>올리기</button>
           </div>
@@ -53,13 +55,13 @@
           <span class="wt-label">
             출근
           </span>
-          <span class="wt-val editable" id="wtInTime" title="클릭하면 수정" onclick="wtOpenEditPop('in',this)">
+          <span class="wt-val editable" id="wtInTime" title="클릭하면 수정" data-wt-edit="in">
             -
           </span>
           <span class="wt-label" style="margin-left:8px">
             퇴근
           </span>
-          <span class="wt-val editable" id="wtOutTime" title="클릭하면 수정" onclick="wtOpenEditPop('out',this)">
+          <span class="wt-val editable" id="wtOutTime" title="클릭하면 수정" data-wt-edit="out">
             -
           </span>
           <span class="wt-label wt-live-extra" id="wtLiveWorkedLabel" style="margin-left:8px">
@@ -105,10 +107,10 @@
         </div>
       </div>
       <div class="wt-btn-group">
-        <button class="btn-ci" id="btnCI" onclick="wtCheckin()">
+        <button class="btn-ci" id="btnCI" data-wt-action="checkin">
           출근
         </button>
-        <button class="btn-co" id="btnCO" onclick="wtCheckout()" disabled>
+        <button class="btn-co" id="btnCO" data-wt-action="checkout" disabled>
           퇴근
         </button>
       </div>
@@ -120,10 +122,10 @@
       </label>
       <input type="time" id="wtEditPopTime">
       <div class="wt-edit-pop-btns">
-        <button class="wt-pop-cancel" onclick="wtCloseEditPop()">
+        <button class="wt-pop-cancel" data-wt-action="close-edit">
           취소
         </button>
-        <button class="wt-pop-save" onclick="wtSaveEditPop()">
+        <button class="wt-pop-save" data-wt-action="save-edit">
           저장
         </button>
       </div>
@@ -891,13 +893,13 @@
           </label>
           <input type="text" id="wmInMemo" placeholder="선택">
           <div class="wm-btn-row">
-            <button class="wm-btn-cancel" onclick="wmCloseModal()">
+            <button class="wm-btn-cancel" data-wm-action="close">
               취소
             </button>
-            <button class="wm-btn-del" id="wmBtnDel" onclick="wmDeleteRecord()" style="display:none">
+            <button class="wm-btn-del" id="wmBtnDel" data-wm-action="delete" style="display:none">
               삭제
             </button>
-            <button class="wm-btn-save" onclick="wmSaveRecord()">
+            <button class="wm-btn-save" data-wm-action="save">
               저장
             </button>
           </div>
@@ -1314,6 +1316,36 @@
         </div>
       </div>
     </div>
+    <div class="access-gate" id="accessGate" hidden>
+      <div class="access-panel">
+        <div class="access-eyebrow">Cloud access</div>
+        <h2 id="accessGateTitle">승인 확인 중</h2>
+        <p id="accessGateBody">Google 계정 승인 상태를 확인하고 있습니다.</p>
+        <div class="access-meta" id="accessGateMeta"></div>
+        <div class="access-actions">
+          <button class="btn btn-secondary" type="button" id="accessGateRefresh">상태 새로고침</button>
+          <button class="btn btn-primary" type="button" id="accessGateLogout">로그아웃</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal" id="userAccessModal">
+      <div class="modal-box user-access-modal-box">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">사용자 관리</div>
+            <div class="modal-sub">승인된 사용자만 클라우드 데이터를 읽고 쓸 수 있습니다.</div>
+          </div>
+          <button class="modal-close" type="button" id="userAccessClose">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="user-access-list" id="userAccessList"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" id="userAccessRefresh">새로고침</button>
+          <button class="btn btn-primary" type="button" id="userAccessDone">닫기</button>
+        </div>
+      </div>
+    </div>
     <!-- Edit-mode tweaks panel: theme, density, background tone, and accent color. -->
     <div id="tweaksPanel">
       <h4>
@@ -1372,10 +1404,10 @@
         </select>
       </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=20260518-1"></script>
-    <script src="cloud-sync.js?v=20260518-1"></script>
-    <script src="app.js?v=20260519-1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.0/dist/umd/supabase.min.js" integrity="sha384-zfshMiFERdyezN/WZXzHe9g53pOZCrLPBj/qC0ohHnxQ20c3zXwFqbtRAwvZMacA" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="config.js?v=20260520-1"></script>
+    <script src="cloud-sync.js?v=20260520-1"></script>
+    <script src="app.js?v=20260520-1"></script>
     <script src="project-notes.js?v=20260514-2"></script>
   </body>
 </html>

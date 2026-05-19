@@ -416,7 +416,7 @@ window.styleStatusSelect = function(sel){
       const wM=r&&r.in&&r.out?workMins(r):0, oM=r&&r.in&&r.out?otMins(r):0;
       const pct=maxMins>0?((wM+oM)/maxMins)*100:0;
       const isOT=oM>0;
-      html+=`<div class="wm-bar-wrap" onclick="wmOpenModal('${ds}')">
+      html+=`<div class="wm-bar-wrap" data-wm-open="${ds}">
         ${isOT?'<div class="wm-bar-ot-tag">+'+fmtH(oM)+'</div>':''}
         <div class="wm-bar-bg" style="height:${Math.max(pct,2)}px">
           <div class="wm-bar-fill ${isOT?'ot-bar hl':'normal'}" style="height:100%"></div>
@@ -445,7 +445,7 @@ window.styleStatusSelect = function(sel){
         const w=workMins(r), ot=otMins(r), total=w+ot; cls+=ot>0?' ot-day':' has-work'; hrs=ot>0?`${fmtH(w)} + ${fmtH(ot)}`:fmtH(total);
         if(ot>0)badge=`<div class="wm-ot-badge">총 ${fmtH(total)}</div>`;
       }
-      cells+=`<div class="${cls}" onclick="wmOpenModal('${ds}')"><div class="wm-cal-day">${d}</div><div class="wm-cal-hrs">${hrs}</div>${badge}</div>`;
+      cells+=`<div class="${cls}" data-wm-open="${ds}"><div class="wm-cal-day">${d}</div><div class="wm-cal-hrs">${hrs}</div>${badge}</div>`;
     }
     const rem=(firstDay+lastDate)%7===0?0:7-(firstDay+lastDate)%7;
     for(let i=1;i<=rem;i++) cells+=`<div class="wm-cal-cell other"><div class="wm-cal-day">${i}</div></div>`;
@@ -469,7 +469,7 @@ window.styleStatusSelect = function(sel){
     let html='';
     monthly.forEach((mo,i)=>{
       const total=mo.wm+mo.ot,pct=maxMins>0?(total/maxMins)*100:0,isOT=mo.ot>0;
-      html+=`<div class="wm-bar-wrap" onclick="wmToggleHL(this)">
+      html+=`<div class="wm-bar-wrap" data-wm-toggle-ot="true">
         ${isOT?'<div class="wm-bar-ot-tag">+'+fmtH(mo.ot)+'</div>':''}
         <div class="wm-bar-bg" style="height:${Math.max(pct,2)}px">
           <div class="wm-bar-fill ${isOT?'ot-bar':'normal'}" style="height:100%"></div>
@@ -534,6 +534,26 @@ window.styleStatusSelect = function(sel){
 
   document.addEventListener('DOMContentLoaded',()=>{
     wtUpdateBar(); bindCalNav(); bindWmTabs();
+    document.querySelectorAll('[data-wt-edit]').forEach(el=>el.addEventListener('click',()=>wtOpenEditPop(el.dataset.wtEdit,el)));
+    document.querySelectorAll('[data-wt-action]').forEach(el=>el.addEventListener('click',()=>{
+      const action=el.dataset.wtAction;
+      if(action==='checkin') wtCheckin();
+      if(action==='checkout') wtCheckout();
+      if(action==='close-edit') wtCloseEditPop();
+      if(action==='save-edit') wtSaveEditPop();
+    }));
+    document.querySelectorAll('[data-wm-action]').forEach(el=>el.addEventListener('click',()=>{
+      const action=el.dataset.wmAction;
+      if(action==='close') wmCloseModal();
+      if(action==='delete') wmDeleteRecord();
+      if(action==='save') wmSaveRecord();
+    }));
+    document.body.addEventListener('click',(event)=>{
+      const openEl=event.target.closest('[data-wm-open]');
+      if(openEl){ wmOpenModal(openEl.dataset.wmOpen); return; }
+      const toggleEl=event.target.closest('[data-wm-toggle-ot]');
+      if(toggleEl) wmToggleHL(toggleEl);
+    });
     document.getElementById('wmModalBg').addEventListener('click',function(e){if(e.target===this)wmCloseModal();});
     document.querySelectorAll('[data-tab]').forEach(btn=>{
       btn.addEventListener('click',()=>setTimeout(initMarquee,120));
@@ -597,9 +617,15 @@ window.styleStatusSelect = function(sel){
     document.getElementById('twAccent').value = state.accent;
   }
 
+  const editModeTargetOrigin = window.location.origin;
+  function postEditModeMessage(message){
+    if(window.parent === window) return;
+    try { window.parent.postMessage(message, editModeTargetOrigin); } catch(e){}
+  }
+
   function persist(keys){
     try {
-      window.parent.postMessage({type:'__edit_mode_set_keys', edits: keys}, '*');
+      postEditModeMessage({type:'__edit_mode_set_keys', edits: keys});
     } catch(e){}
     try {
       const saved = JSON.parse(localStorage.getItem('wb_tweaks_v22')||'{}');
@@ -629,11 +655,12 @@ window.styleStatusSelect = function(sel){
 
   // Edit mode protocol
   window.addEventListener('message', (e) => {
+    if(e.origin !== editModeTargetOrigin) return;
     const d = e.data || {};
     if (d.type === '__activate_edit_mode') panel.classList.add('show');
     if (d.type === '__deactivate_edit_mode') panel.classList.remove('show');
   });
-  try { window.parent.postMessage({type:'__edit_mode_available'}, '*'); } catch(e){}
+  postEditModeMessage({type:'__edit_mode_available'});
 
   apply();
 })();

@@ -2504,3 +2504,132 @@ body::before {
     grid-column: 1 / -1;
   }
 }
+
+.access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(245,245,247,0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.access-gate[hidden] {
+  display: none;
+}
+
+.access-panel {
+  width: min(520px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow-modal);
+  padding: 28px;
+}
+
+.access-eyebrow {
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.access-panel h2 {
+  margin: 8px 0 10px;
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.access-panel p {
+  margin: 0;
+  color: var(--text2);
+  font-size: 14px;
+}
+
+.access-meta {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-alt);
+  color: var(--text2);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.access-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.user-access-modal-box {
+  width: min(980px, 100%);
+}
+
+.user-access-list {
+  display: grid;
+  gap: 10px;
+}
+
+.user-access-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) 120px 120px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-alt);
+}
+
+.user-access-person {
+  min-width: 0;
+}
+
+.user-access-email {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-access-meta {
+  margin-top: 3px;
+  color: var(--text3);
+  font-size: 11px;
+}
+
+.user-access-select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-access-save {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .user-access-row {
+    grid-template-columns: 1fr;
+  }
+  .access-actions {
+    flex-direction: column;
+  }
+}
