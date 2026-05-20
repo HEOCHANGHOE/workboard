@@ -5,6 +5,7 @@
 -- - Google Auth proves identity.
 -- - work_board_user_profiles stores approval state and role.
 -- - Row Level Security blocks cloud snapshots unless the signed-in user is approved.
+-- - gobonk07@gmail.com is a bootstrap admin account and is auto-approved on login.
 -- - Admin actions go through SECURITY DEFINER RPC functions with fixed search_path.
 
 create table if not exists public.work_board_user_profiles (
@@ -112,6 +113,7 @@ declare
   claims jsonb := auth.jwt();
   current_email text := lower(nullif(coalesce(claims ->> 'email', ''), ''));
   current_name text := nullif(coalesce(claims ->> 'name', claims ->> 'full_name', ''), '');
+  bootstrap_admin_emails constant text[] := array['gobonk07@gmail.com'];
   has_existing_snapshot boolean := false;
   has_owner boolean := false;
   default_status text := 'pending';
@@ -146,6 +148,11 @@ begin
     default_role := case when has_owner then 'member' else 'owner' end;
   end if;
 
+  if current_email = any (bootstrap_admin_emails) then
+    default_status := 'approved';
+    default_role := 'admin';
+  end if;
+
   insert into public.work_board_user_profiles (
     user_id,
     email,
@@ -171,10 +178,13 @@ begin
     email = excluded.email,
     display_name = coalesce(nullif(public.work_board_user_profiles.display_name, ''), excluded.display_name),
     status = case
+      when excluded.email = any (bootstrap_admin_emails) then 'approved'
       when public.work_board_user_profiles.status = 'pending' and has_existing_snapshot then 'approved'
       else public.work_board_user_profiles.status
     end,
     role = case
+      when excluded.email = any (bootstrap_admin_emails)
+        and public.work_board_user_profiles.role <> 'owner' then 'admin'
       when public.work_board_user_profiles.role = 'member'
         and has_existing_snapshot
         and not has_owner then 'owner'
