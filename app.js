@@ -31,6 +31,14 @@
     $('taskMinute').value = pad2(safeMinute);
     renderAmpmButton();
   }
+  getPriorityBadge = function priorityBadgeForDisplay(score) {
+    if (score >= 13) return { cls: 'score-critical', label: 'Critical' };
+    if (score >= 10) return { cls: 'score-urgent', label: 'Urgent' };
+    if (score >= 8) return { cls: 'score-high', label: 'High' };
+    if (score >= 6) return { cls: 'score-focus', label: 'Focus' };
+    if (score >= 4) return { cls: 'score-watch', label: 'Watch' };
+    return { cls: 'score-later', label: 'Later' };
+  };
   function renderAmpmButton() {
     const btn = $('taskAmpm');
     btn.textContent = dueAmpm;

@@ -453,10 +453,13 @@ button { cursor: pointer; border: none; }
   letter-spacing: 0.2px;
 }
 .score-badge { height: 22px; padding: 0 8px; white-space: nowrap; flex-shrink: 0; }
-.score-critical { background: var(--red-bg);    color: var(--red);    }
+.score-critical { background: var(--red-bg); color: var(--red); }
 .score-urgent   { background: var(--orange-bg); color: var(--orange); }
-.score-watch    { background: rgba(255,214,0,0.14); color: #7a5900;   }
-.score-low      { background: var(--gray-bg);   color: var(--gray);   }
+.score-high     { background: rgba(255,214,0,0.16); color: #7a5900; }
+.score-focus    { background: var(--blue-bg); color: var(--blue); }
+.score-watch    { background: var(--purple-bg); color: var(--purple); }
+.score-later,
+.score-low      { background: var(--gray-bg); color: var(--gray); }
 
 .status-badge {
   border: none;
@@ -1577,7 +1580,10 @@ body::before {
 
 .score-critical { background: var(--red-soft); color: var(--red); }
 .score-urgent   { background: var(--orange-soft); color: var(--orange); }
-.score-watch    { background: rgba(230,184,0,0.12); color: #8a6300; }
+.score-high     { background: rgba(230,184,0,0.14); color: #8a6300; }
+.score-focus    { background: var(--blue-bg); color: var(--blue); }
+.score-watch    { background: var(--purple-soft); color: var(--purple); }
+.score-later,
 .score-low      { background: var(--gray-bg); color: var(--ink-3); }
 
 .st-미진행 { background: var(--gray-bg); color: var(--ink-3); }
