@@ -58,6 +58,11 @@
     if (distance != null && distance >= 4) score = Math.min(score, 9);
     return Math.max(score, getDeadlinePriorityFloor(task));
   };
+  isDueSoon = function dueTodayOrSoon(task) {
+    if (task.status === '완료') return false;
+    const distance = dueDayDistance(task);
+    return distance != null && distance >= 0 && distance <= 3 && !isOverdue(task);
+  };
   getPriorityBadge = function priorityBadgeForDisplay(score) {
     if (score >= 13) return { cls: 'score-critical', label: 'Critical' };
     if (score >= 10) return { cls: 'score-urgent', label: 'Urgent' };

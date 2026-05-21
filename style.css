@@ -405,9 +405,25 @@ button { cursor: pointer; border: none; }
 .list-box { max-height: 360px; overflow-y: auto; }
 .list-box::-webkit-scrollbar { width: 4px; }
 .list-box::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
-#todayList { max-height: 360px; overflow-y: auto; }
-#todayList::-webkit-scrollbar { width: 4px; }
-#todayList::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+#todayList {
+  max-height: 360px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,113,227,0.48) rgba(0,113,227,0.06);
+}
+#todayList::-webkit-scrollbar { width: 10px; }
+#todayList::-webkit-scrollbar-track {
+  background: rgba(0,113,227,0.05);
+  border-left: 1px solid rgba(0,113,227,0.08);
+  border-radius: var(--rfull);
+  margin: 8px 3px;
+}
+#todayList::-webkit-scrollbar-thumb {
+  background: rgba(0,113,227,0.48);
+  border: 3px solid var(--card);
+  border-radius: var(--rfull);
+}
+#todayList::-webkit-scrollbar-thumb:hover { background: rgba(0,113,227,0.7); }
 .list-item {
   display: grid;
   grid-template-columns: auto 1fr auto;
