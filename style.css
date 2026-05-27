@@ -2283,8 +2283,8 @@ body::before {
   display: flex;
   flex-direction: column;
 }
-.home-priority-column > .card:first-child .list-box {
-  flex: 1 1 auto;
+.home-priority-column > .card:first-child #todayList {
+  flex: 1 1 0;
   max-height: none;
   min-height: 240px;
 }
@@ -2298,6 +2298,10 @@ body::before {
   .home-priority-column,
   .new-task-card {
     height: auto;
+  }
+  .home-priority-column > .card:first-child #todayList {
+    flex: 0 1 auto;
+    max-height: 360px;
   }
 }
 
