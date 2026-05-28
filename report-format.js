@@ -8,6 +8,8 @@
   const WEEKLY_KEY = 'work_weekly_history_v1';
   const MONTHLY_KEY = 'work_monthly_history_v1';
   const STATUS_LIST = ['미진행', '진행중', '대기', '완료'];
+  const REPORT_STATUS_LIST = ['진행중', '완료'];
+  const REPORT_META_KEYS = ['collaborators', 'startedAt', 'completedAt', 'statusUpdatedAt'];
   const KOREAN_SEQ = '가나다라마바사아자차카타파하';
   const CIRCLED_NUMBERS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
 
@@ -26,18 +28,52 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function mergeTaskCollaborators(nextTasks, previousTasks) {
+  function hasOwn(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  function applyStatusMetadata(task, previousTask, nowIso) {
+    if (!task || typeof task !== 'object') return task;
+    const previousStatus = previousTask?.status;
+    const statusChanged = previousTask && previousStatus !== task.status;
+    const next = { ...task };
+
+    REPORT_META_KEYS.forEach((key) => {
+      if (!hasOwn(next, key) && previousTask && hasOwn(previousTask, key)) {
+        next[key] = previousTask[key];
+      }
+    });
+
+    if (statusChanged) next.statusUpdatedAt = nowIso;
+    if (!previousTask && REPORT_STATUS_LIST.includes(next.status)) next.statusUpdatedAt = next.statusUpdatedAt || nowIso;
+
+    if (next.status === '진행중' && (statusChanged || !next.startedAt)) {
+      next.startedAt = nowIso;
+    }
+    if (next.status === '완료' && (statusChanged || !next.completedAt)) {
+      next.completedAt = nowIso;
+    }
+    if (statusChanged && !REPORT_STATUS_LIST.includes(next.status)) {
+      delete next.startedAt;
+      delete next.completedAt;
+    }
+    if (statusChanged && previousStatus === '완료' && next.status !== '완료') {
+      delete next.completedAt;
+    }
+    if (statusChanged && previousStatus === '진행중' && next.status !== '진행중' && next.status !== '완료') {
+      delete next.startedAt;
+    }
+
+    return next;
+  }
+
+  function mergeTaskReportMetadata(nextTasks, previousTasks) {
     if (!Array.isArray(nextTasks) || !Array.isArray(previousTasks)) return nextTasks;
-    const previousById = new Map(
-      previousTasks
-        .filter((task) => task && task.id != null && Object.prototype.hasOwnProperty.call(task, 'collaborators'))
-        .map((task) => [String(task.id), task.collaborators])
-    );
+    const previousById = new Map(previousTasks.filter((task) => task && task.id != null).map((task) => [String(task.id), task]));
+    const nowIso = new Date().toISOString();
     return nextTasks.map((task) => {
       if (!task || typeof task !== 'object' || task.id == null) return task;
-      if (Object.prototype.hasOwnProperty.call(task, 'collaborators')) return task;
-      if (!previousById.has(String(task.id))) return task;
-      return { ...task, collaborators: previousById.get(String(task.id)) };
+      return applyStatusMetadata(task, previousById.get(String(task.id)), nowIso);
     });
   }
 
@@ -49,7 +85,7 @@
         try {
           const nextTasks = JSON.parse(String(value));
           const previousTasks = JSON.parse(this.getItem(TASKS_KEY) || '[]');
-          value = JSON.stringify(mergeTaskCollaborators(nextTasks, previousTasks));
+          value = JSON.stringify(mergeTaskReportMetadata(nextTasks, previousTasks));
         } catch (error) {
           // If the value is not the task array, leave the original write untouched.
         }
@@ -175,10 +211,47 @@
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
+  function parseDateValue(value) {
+    const date = new Date(value || '');
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function isDateWithin(date, range) {
+    return Boolean(date && date >= range.start && date <= range.end);
+  }
+
+  function rangeIncludesToday(range) {
+    const today = startOfDay(new Date());
+    return today >= startOfDay(range.start) && today <= startOfDay(range.end);
+  }
+
+  function rangesOverlap(start, end, range) {
+    return Boolean(start && end && start <= range.end && end >= range.start);
+  }
+
   function isRelatedWithin(task, range) {
     const created = getCreatedDate(task);
     const due = parseDueDateTime(task);
     return Boolean((created && created >= range.start && created <= range.end) || (due && due >= range.start && due <= range.end));
+  }
+
+  function isReportTaskForRange(task, range) {
+    const status = String(task?.status || '');
+    if (!REPORT_STATUS_LIST.includes(status)) return false;
+
+    if (status === '완료') {
+      const completed = parseDateValue(task?.completedAt || task?.statusUpdatedAt);
+      const started = parseDateValue(task?.startedAt);
+      if (completed && isDateWithin(completed, range)) return true;
+      if (started && completed) return rangesOverlap(started, completed, range);
+      if (completed) return false;
+      return isRelatedWithin(task, range);
+    }
+
+    const started = parseDateValue(task?.startedAt || task?.statusUpdatedAt);
+    if (started) return started <= range.end;
+
+    return isRelatedWithin(task, range) || rangeIncludesToday(range);
   }
 
   function dueDayDistance(task) {
@@ -217,6 +290,10 @@
       if (dueA !== dueB) return dueA - dueB;
       return (Date.parse(b?.createdAt || '') || 0) - (Date.parse(a?.createdAt || '') || 0);
     });
+  }
+
+  function getReportTasksForRange(range) {
+    return sortReportTasks(readTasks().filter((task) => isReportTaskForRange(task, range)));
   }
 
   function koreanMarker(index) {
@@ -307,7 +384,7 @@
     const relatedTasks = sortReportTasks(tasks.filter((task) => String(task?.name || '').trim()));
     const lines = ['[개인 업무 보고]', ''];
     if (!relatedTasks.length) {
-      lines.push('- 해당 기간 업무 없음');
+      lines.push('- 해당 기간 진행중이거나 완료된 업무 없음');
       return lines.join('\n');
     }
 
@@ -344,7 +421,7 @@
     const historyKey = type === 'weekly' ? WEEKLY_KEY : MONTHLY_KEY;
     const history = readJson(historyKey, []);
     const existing = Array.isArray(history) ? history.find((item) => item?.periodKey === periodKey) : null;
-    const list = readTasks().filter((task) => isRelatedWithin(task, range));
+    const list = getReportTasksForRange(range);
 
     $('reportType').value = type;
     $('reportPeriodKey').value = periodKey;
@@ -355,6 +432,71 @@
       : '보고 양식에 맞춰 자동 초안을 만들었습니다.';
     $('reportContent').value = existing ? existing.content : generateStructuredReport(list);
     $('reportModal').classList.add('open');
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatDueDisplay(task) {
+    const due = parseDueDateTime(task);
+    if (!due) return '-';
+    return `${due.getFullYear()}.${pad2(due.getMonth() + 1)}.${pad2(due.getDate())}`;
+  }
+
+  function renderPeriodStats(targetId, list) {
+    const el = $(targetId);
+    if (!el) return;
+    const done = list.filter((task) => task.status === '완료').length;
+    const doing = list.filter((task) => task.status === '진행중').length;
+    el.innerHTML = `
+      <div class="report-stat"><div class="v">${list.length}</div><div class="l">전체</div></div>
+      <div class="report-stat"><div class="v" style="color:var(--green)">${done}</div><div class="l">완료</div></div>
+      <div class="report-stat"><div class="v" style="color:var(--blue)">${doing}</div><div class="l">진행중</div></div>
+      <div class="report-stat"><div class="v" style="color:var(--purple)">0</div><div class="l">대기</div></div>`;
+  }
+
+  function renderPeriodTaskList(targetId, list) {
+    const el = $(targetId);
+    if (!el) return;
+    if (!list.length) {
+      el.innerHTML = '<div class="empty">해당 기간 진행중이거나 완료된 업무 없음</div>';
+      return;
+    }
+    el.innerHTML = list.map((task) => `
+      <div class="list-item">
+        <span class="status-badge st-${escapeHtml(task.status)}">${escapeHtml(task.status)}</span>
+        <div>
+          <div class="task-name">${escapeHtml(task.name)}</div>
+          ${task.project ? `<div class="name-subline">${escapeHtml(task.project)}</div>` : ''}
+          <div class="task-meta">${escapeHtml(task.channel || '기타')} · ${escapeHtml(formatDueDisplay(task))}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderPeriodPreview(type) {
+    const range = getRangeForType(type);
+    const list = getReportTasksForRange(range);
+    const prefix = type === 'weekly' ? 'weekly' : 'monthly';
+    renderPeriodStats(`${prefix}Stats`, list);
+    renderPeriodTaskList(`${prefix}Tasks`, list);
+  }
+
+  function renderAllPeriodPreviews() {
+    renderPeriodPreview('weekly');
+    renderPeriodPreview('monthly');
+  }
+
+  function schedulePeriodPreviewRefresh(type) {
+    window.setTimeout(() => {
+      if (type) renderPeriodPreview(type);
+      else renderAllPeriodPreviews();
+    }, 0);
   }
 
   function createField(id, label, placeholder) {
@@ -401,6 +543,7 @@
     target.collaborators = normalizeCollaborators(collaborators);
     writeJson(TASKS_KEY, tasks);
     window.WorkBoardApp?.refreshFromStorage?.();
+    schedulePeriodPreviewRefresh();
   }
 
   function fillCollaboratorsForTask(taskId, inputId) {
@@ -440,6 +583,22 @@
       event.stopImmediatePropagation();
       openStructuredReportModal('monthly');
     }, true);
+  }
+
+  function bindReportPreviewRefresh() {
+    $('weeklyPrev')?.addEventListener('click', () => schedulePeriodPreviewRefresh('weekly'));
+    $('weeklyNext')?.addEventListener('click', () => schedulePeriodPreviewRefresh('weekly'));
+    $('monthlyPrev')?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
+    $('monthlyNext')?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
+    document.querySelector('[data-tab="weekly"]')?.addEventListener('click', () => schedulePeriodPreviewRefresh('weekly'));
+    document.querySelector('[data-tab="monthly"]')?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
+    $('saveBtn')?.addEventListener('click', () => window.setTimeout(renderAllPeriodPreviews, 90));
+    $('detailModalSave')?.addEventListener('click', () => window.setTimeout(renderAllPeriodPreviews, 90));
+    document.body.addEventListener('change', (event) => {
+      if (event.target?.dataset?.action === 'status-select') {
+        window.setTimeout(renderAllPeriodPreviews, 30);
+      }
+    });
   }
 
   function bindPersistenceHooks() {
@@ -491,7 +650,9 @@
     ensureCollaboratorFields();
     ensureReportGroupField();
     bindReportButtons();
+    bindReportPreviewRefresh();
     bindPersistenceHooks();
+    schedulePeriodPreviewRefresh();
   }
 
   if (document.readyState === 'loading') {
