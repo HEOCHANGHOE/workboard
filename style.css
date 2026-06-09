@@ -2343,6 +2343,343 @@ body::before {
 
 .textarea.compact { min-height: 76px; }
 
+/* Project operations page */
+.ops-layout { display: grid; gap: 16px; }
+.ops-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ops-head h2 {
+  margin: 3px 0 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+.ops-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ops-filter { width: min(180px, 42vw); min-height: 40px; }
+.ops-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.ops-stat {
+  padding: 14px 16px;
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.ops-stat-value {
+  font-size: 24px;
+  font-weight: 650;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.ops-stat-value.tone-blue { color: var(--blue); }
+.ops-stat-value.tone-orange { color: var(--orange); }
+.ops-stat-value.tone-green { color: var(--green); }
+.ops-stat-value.tone-purple { color: var(--purple); }
+.ops-stat-label {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 0;
+}
+.ops-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+  gap: 16px;
+}
+.ops-card { border-radius: 8px; }
+.ops-project-list, .ops-side-list, .ops-issue-list {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+.ops-project-card {
+  display: grid;
+  gap: 9px;
+  width: 100%;
+  padding: 13px 14px;
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-2);
+  color: var(--text);
+  text-align: left;
+}
+.ops-project-card:hover, .ops-issue:hover { border-color: rgba(0,113,227,0.28); background: var(--card); }
+.ops-project-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ops-project-main strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.ops-project-main span:last-child {
+  margin-left: auto;
+  color: var(--text3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ops-project-goal {
+  min-height: 20px;
+  color: var(--text2);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ops-progress-line {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--gray-bg);
+}
+.ops-progress-line span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue), var(--green));
+}
+.ops-project-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--text3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ops-status, .ops-mile-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 3px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.ops-normal { color: var(--green); background: var(--green-bg); }
+.ops-watch { color: var(--orange); background: var(--orange-bg); }
+.ops-delay { color: var(--red); background: var(--red-bg); }
+.ops-hold { color: var(--purple); background: var(--purple-bg); }
+.ops-done { color: var(--gray); background: var(--gray-bg); }
+.ops-timeline-scroll {
+  overflow: auto;
+  padding: 0 14px 14px;
+}
+.ops-timeline-grid {
+  min-width: 1240px;
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ops-timeline-row {
+  display: grid;
+  grid-template-columns: 150px 170px 92px 92px 92px 64px 76px 68px minmax(520px, 1fr);
+  min-height: 38px;
+  border-bottom: 0.5px solid var(--line-soft);
+  background: var(--card);
+}
+.ops-timeline-row:last-child { border-bottom: 0; }
+.ops-timeline-row > div {
+  min-width: 0;
+  padding: 8px 9px;
+  border-right: 0.5px solid var(--line-soft);
+  font-size: 11.5px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ops-timeline-row > div:last-child { border-right: 0; }
+.ops-timeline-head {
+  min-height: 34px;
+  background: var(--ink);
+}
+.ops-timeline-head > div {
+  color: var(--card);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.ops-project-cell {
+  font-weight: 800;
+  color: var(--text) !important;
+}
+.ops-task-cell {
+  color: var(--text) !important;
+  font-weight: 650;
+}
+.ops-axis, .ops-bar-cell {
+  position: relative;
+  background-image: repeating-linear-gradient(to right, rgba(0,0,0,0.055) 0, rgba(0,0,0,0.055) 1px, transparent 1px, transparent 7.142%);
+}
+.ops-axis span {
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--card);
+}
+.ops-bar-cell {
+  min-height: 38px;
+  background-color: var(--card-2);
+}
+.ops-bar-bg, .ops-bar-fill {
+  position: absolute;
+  top: 50%;
+  height: 16px;
+  transform: translateY(-50%);
+  border-radius: 4px;
+}
+.ops-bar-bg { background: rgba(0,113,227,0.13); }
+.ops-bar-fill { min-width: 2px; }
+.ops-task-todo { background: var(--gray); }
+.ops-task-doing { background: var(--blue); }
+.ops-task-hold { background: var(--purple); }
+.ops-task-done { background: var(--green); }
+.ops-today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--red);
+  opacity: 0.72;
+  z-index: 2;
+}
+.ops-milestone {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  padding: 10px;
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-2);
+}
+.ops-milestone strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ops-milestone span:last-child {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text3);
+}
+.ops-mile-예정 { color: var(--gray); background: var(--gray-bg); }
+.ops-mile-진행 { color: var(--blue); background: var(--blue-bg); }
+.ops-mile-완료 { color: var(--green); background: var(--green-bg); }
+.ops-mile-지연 { color: var(--red); background: var(--red-bg); }
+.ops-issue {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-2);
+  color: var(--text);
+  text-align: left;
+}
+.ops-issue strong {
+  display: block;
+  font-size: 13px;
+}
+.ops-issue p {
+  margin: 3px 0 0;
+  color: var(--text2);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ops-modal-box { width: min(1060px, 100%); }
+.ops-form-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.ops-editor-section {
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 0.5px solid var(--line-soft);
+}
+.ops-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.ops-stage-list, .ops-mile-list {
+  display: grid;
+  gap: 8px;
+}
+.ops-stage-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.3fr) minmax(90px, 0.8fr) 132px 132px 112px 88px 32px;
+  gap: 8px;
+  align-items: center;
+}
+.ops-mile-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 132px 112px 32px;
+  gap: 8px;
+  align-items: center;
+}
+.ops-row-remove {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text3);
+  font-size: 17px;
+  font-weight: 800;
+}
+.ops-row-remove:hover {
+  color: var(--red);
+  background: var(--red-bg);
+}
+
+@media (max-width: 1100px) {
+  .ops-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ops-main-grid { grid-template-columns: 1fr; }
+  .ops-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .ops-head { align-items: stretch; flex-direction: column; }
+  .ops-actions { justify-content: stretch; }
+  .ops-actions > * { flex: 1 1 150px; }
+  .ops-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ops-form-grid, .ops-stage-row, .ops-mile-row { grid-template-columns: 1fr; }
+  .ops-row-remove { justify-self: end; }
+}
+
 /* Cloud sync and backup controls */
 .sync-tools {
   display: flex;

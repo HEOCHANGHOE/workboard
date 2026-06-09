@@ -9,6 +9,7 @@
     'work_project_order_v1',
     'work_project_collapse_v1',
     'work_project_notes_v1',
+    'work_project_ops_v1',
     'wt_rec',
     'wt_live',
     'wb_tweaks_v22'
@@ -35,6 +36,7 @@
     work_project_order_v1: { type: 'array', maxItems: 1000 },
     work_project_collapse_v1: { type: 'array', maxItems: 1000 },
     work_project_notes_v1: { type: 'object', maxKeys: 1000 },
+    work_project_ops_v1: { type: 'object', maxKeys: 1000 },
     wt_rec: { type: 'object', maxKeys: 5000 },
     wt_live: { type: 'objectOrNull', maxKeys: 20 },
     wb_tweaks_v22: { type: 'object', maxKeys: 40 }
@@ -128,6 +130,7 @@
       !isEmptyArrayValue(snapshot.data.work_weekly_history_v1) ||
       !isEmptyArrayValue(snapshot.data.work_monthly_history_v1) ||
       !isEmptyObjectValue(snapshot.data.work_project_notes_v1) ||
+      !isEmptyObjectValue(snapshot.data.work_project_ops_v1) ||
       !isEmptyObjectValue(snapshot.data.wt_rec);
   }
 
@@ -136,6 +139,7 @@
       !isEmptyArrayValue(readJsonKey('work_weekly_history_v1')) ||
       !isEmptyArrayValue(readJsonKey('work_monthly_history_v1')) ||
       !isEmptyObjectValue(readJsonKey('work_project_notes_v1')) ||
+      !isEmptyObjectValue(readJsonKey('work_project_ops_v1')) ||
       !isEmptyObjectValue(readJsonKey('wt_rec'));
   }
 
@@ -176,6 +180,9 @@
       monthly: Array.isArray(data.work_monthly_history_v1) ? data.work_monthly_history_v1.length : 0,
       notes: data.work_project_notes_v1 && typeof data.work_project_notes_v1 === 'object'
         ? Object.keys(data.work_project_notes_v1).length
+        : 0,
+      ops: data.work_project_ops_v1 && typeof data.work_project_ops_v1 === 'object'
+        ? Object.keys(data.work_project_ops_v1).length
         : 0
     };
   }
