@@ -2,20 +2,25 @@
 (function () {
   'use strict';
 
-  const TASKS_KEY = 'work_dashboard_tasks_v1';
-  const NOTES_KEY = 'work_project_notes_v1';
-  const ORDER_KEY = 'work_project_order_v1';
   const OPS_KEY = 'work_project_ops_v1';
   const ACTIVE_TAB_KEY = 'work_board_active_tab';
   const OPS_ACTIVE_KEY = 'work_project_ops_active';
   const STATUS_LIST = ['미진행', '진행중', '대기', '완료'];
   const OPS_STATUS_LIST = ['정상', '주의', '지연', '보류', '완료'];
+  const TIMELINE_VIEW_LIST = ['daily', 'weekly', 'monthly'];
+  const TIMELINE_VIEW_LABELS = {
+    daily: '데일리',
+    weekly: '위클리',
+    monthly: '먼슬리'
+  };
 
   const $ = (id) => document.getElementById(id);
 
   let activeProjectFilter = '전체';
   let activeStatusFilter = '전체';
   let activeEditorProject = '';
+  let timelineView = 'weekly';
+  let timelineCursor = new Date();
 
   function readJson(key, fallback) {
     try {
@@ -68,6 +73,38 @@
     return next;
   }
 
+  function addMonths(date, months) {
+    const next = new Date(date);
+    next.setMonth(next.getMonth() + months);
+    return next;
+  }
+
+  function startOfDay(date) {
+    const next = new Date(date);
+    next.setHours(0, 0, 0, 0);
+    return next;
+  }
+
+  function endOfDay(date) {
+    const next = new Date(date);
+    next.setHours(23, 59, 59, 999);
+    return next;
+  }
+
+  function startOfWeek(date) {
+    const base = startOfDay(date);
+    const day = base.getDay();
+    return addDays(base, day === 0 ? -6 : 1 - day);
+  }
+
+  function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+  }
+
+  function endOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
+
   function daysInclusive(startDate, endDate) {
     if (!startDate || !endDate) return 0;
     return Math.max(1, Math.round((endDate - startDate) / 86400000) + 1);
@@ -77,56 +114,16 @@
     return Math.min(max, Math.max(min, value));
   }
 
-  function readTasks() {
-    const tasks = readJson(TASKS_KEY, []);
-    return Array.isArray(tasks) ? tasks : [];
-  }
-
-  function readNotes() {
-    const notes = readJson(NOTES_KEY, {});
-    return notes && typeof notes === 'object' && !Array.isArray(notes) ? notes : {};
-  }
-
-  function readProjectOrder() {
-    const order = readJson(ORDER_KEY, []);
-    return Array.isArray(order) ? order.map((item) => String(item || '').trim()).filter(Boolean) : [];
-  }
-
   function readOps() {
     const ops = readJson(OPS_KEY, {});
     return ops && typeof ops === 'object' && !Array.isArray(ops) ? ops : {};
   }
 
-  function projectNameOf(task) {
-    return String(task?.project || '').trim() || '미분류';
-  }
-
   function getProjectNames() {
-    const names = new Set();
-    readProjectOrder().forEach((name) => names.add(name));
-    readTasks().forEach((task) => names.add(projectNameOf(task)));
-    Object.keys(readNotes()).forEach((name) => names.add(name));
-    Object.keys(readOps()).forEach((name) => names.add(name));
-    return Array.from(names).filter(Boolean).sort((a, b) => {
-      const order = readProjectOrder();
-      const ai = order.indexOf(a);
-      const bi = order.indexOf(b);
-      if (ai !== -1 || bi !== -1) return (ai === -1 ? Number.MAX_SAFE_INTEGER : ai) - (bi === -1 ? Number.MAX_SAFE_INTEGER : bi);
-      if (a === '미분류') return 1;
-      if (b === '미분류') return -1;
-      return a.localeCompare(b, 'ko');
-    });
-  }
-
-  function taskStartDate(task) {
-    return normalizeDate(String(task?.startedAt || task?.statusUpdatedAt || task?.createdAt || '').slice(0, 10)) ||
-      normalizeDate(task?.dueDate);
-  }
-
-  function taskEndDate(task) {
-    return normalizeDate(String(task?.completedAt || '').slice(0, 10)) ||
-      normalizeDate(task?.dueDate) ||
-      normalizeDate(String(task?.createdAt || '').slice(0, 10));
+    return Object.keys(readOps())
+      .map((name) => String(name || '').trim())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'ko'));
   }
 
   function estimateProgress(status, startDate, endDate) {
@@ -165,71 +162,48 @@
     };
   }
 
-  function getTasksForProject(name, tasks = readTasks()) {
-    return tasks.filter((task) => projectNameOf(task) === name);
-  }
-
   function getDateValues(values) {
     return values.map(parseDate).filter(Boolean);
   }
 
-  function inferDateBounds(name, projectTasks, note, opsProject) {
+  function inferDateBounds(opsProject) {
     const stageStarts = Array.isArray(opsProject?.stages) ? opsProject.stages.map((stage) => stage.startDate) : [];
     const stageEnds = Array.isArray(opsProject?.stages) ? opsProject.stages.map((stage) => stage.endDate) : [];
+    const milestoneDates = Array.isArray(opsProject?.milestones) ? opsProject.milestones.map((milestone) => milestone.date) : [];
     const starts = getDateValues([
       opsProject?.startDate,
       ...stageStarts,
-      ...projectTasks.map(taskStartDate),
-      normalizeDate(String(note?.updatedAt || '').slice(0, 10))
+      ...milestoneDates
     ]);
     const ends = getDateValues([
       opsProject?.endDate,
-      note?.dueDate,
       ...stageEnds,
-      ...projectTasks.map(taskEndDate),
-      normalizeDate(String(note?.reviewDate || '').slice(0, 10))
+      ...milestoneDates
     ]);
     const today = new Date();
     const start = starts.length ? new Date(Math.min(...starts.map((date) => date.getTime()))) : new Date(today.getFullYear(), today.getMonth(), 1);
-    const end = ends.length ? new Date(Math.max(...ends.map((date) => date.getTime()))) : addDays(start, name === '미분류' ? 14 : 30);
+    const end = ends.length ? new Date(Math.max(...ends.map((date) => date.getTime()))) : addDays(start, 30);
     return { startDate: toDateInput(start), endDate: toDateInput(end < start ? addDays(start, 14) : end) };
   }
 
-  function statusFromProject(name, tasks, note, opsProject) {
+  function statusFromProject(opsProject) {
     if (OPS_STATUS_LIST.includes(opsProject?.status)) return opsProject.status;
-    if (OPS_STATUS_LIST.includes(note?.status)) return note.status;
-    if (!tasks.length) return '정상';
-    if (tasks.every((task) => task.status === '완료')) return '완료';
-    const today = new Date();
-    const hasOverdue = tasks.some((task) => {
-      if (task.status === '완료') return false;
-      const due = parseDate(task.dueDate);
-      return due && due < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    });
-    if (hasOverdue) return '지연';
-    if (tasks.some((task) => task.status === '대기')) return '주의';
-    return name === '미분류' ? '주의' : '정상';
+    const end = parseDate(opsProject?.endDate);
+    if (end && end < startOfDay(new Date())) return '지연';
+    return '정상';
   }
 
-  function projectProgress(project, tasks) {
+  function projectProgress(project) {
     if (project.stages.length) {
       return Math.round(project.stages.reduce((sum, stage) => sum + stage.progress, 0) / project.stages.length);
     }
-    if (!tasks.length) return project.status === '완료' ? 100 : 0;
-    const score = tasks.reduce((sum, task) => {
-      if (task.status === '완료') return sum + 1;
-      if (task.status === '진행중') return sum + 0.5;
-      return sum;
-    }, 0);
-    return Math.round((score / tasks.length) * 100);
+    return project.status === '완료' ? 100 : 0;
   }
 
-  function getProjectModel(name, tasks = readTasks(), notes = readNotes(), ops = readOps()) {
-    const note = notes[name] || {};
+  function getProjectModel(name, ops = readOps()) {
     const saved = ops[name] || {};
-    const projectTasks = getTasksForProject(name, tasks);
-    const bounds = inferDateBounds(name, projectTasks, note, saved);
-    const owner = String(saved.owner || note.owner || '').trim();
+    const bounds = inferDateBounds(saved);
+    const owner = String(saved.owner || '').trim();
     const stages = Array.isArray(saved.stages)
       ? saved.stages.map((stage, index) => normalizeStage(stage, index, owner)).filter((stage) => stage.name)
       : [];
@@ -238,28 +212,24 @@
       : [];
     const project = {
       name,
-      goal: String(saved.goal || note.goal || '').trim(),
+      goal: String(saved.goal || '').trim(),
       owner,
-      status: statusFromProject(name, projectTasks, note, saved),
+      status: statusFromProject(saved),
       startDate: normalizeDate(saved.startDate) || bounds.startDate,
       endDate: normalizeDate(saved.endDate) || bounds.endDate,
-      nextAction: String(saved.nextAction || note.next || note.focus || '').trim(),
-      issue: String(saved.issue || note.issue || note.decision || '').trim(),
+      nextAction: String(saved.nextAction || '').trim(),
+      issue: String(saved.issue || '').trim(),
       stages,
       milestones,
-      taskCount: projectTasks.length,
-      doneTaskCount: projectTasks.filter((task) => task.status === '완료').length,
-      updatedAt: saved.updatedAt || note.updatedAt || ''
+      updatedAt: saved.updatedAt || ''
     };
-    project.progress = projectProgress(project, projectTasks);
+    project.progress = projectProgress(project);
     return project;
   }
 
   function getProjects() {
-    const tasks = readTasks();
-    const notes = readNotes();
     const ops = readOps();
-    return getProjectNames().map((name) => getProjectModel(name, tasks, notes, ops));
+    return getProjectNames().map((name) => getProjectModel(name, ops));
   }
 
   function statusClass(status) {
@@ -351,7 +321,8 @@
         </div>
         <div class="ops-project-meta">
           <span>${escapeHtml(formatDate(project.startDate))} ~ ${escapeHtml(formatDate(project.endDate))}</span>
-          <span>${project.doneTaskCount}/${project.taskCount} 완료</span>
+          <span>단계 ${project.stages.length}</span>
+          <span>마일스톤 ${project.milestones.length}</span>
           <span>${project.progress}%</span>
         </div>
       </button>
@@ -359,10 +330,8 @@
   }
 
   function getTimelineRows(projects) {
-    const tasks = readTasks();
     const rows = [];
     projects.forEach((project) => {
-      const projectTasks = getTasksForProject(project.name, tasks);
       const sourceRows = project.stages.length
         ? project.stages.map((stage) => ({
             project,
@@ -374,20 +343,7 @@
             progress: stage.progress,
             memo: stage.memo
           }))
-        : projectTasks.map((task) => {
-            const startDate = taskStartDate(task) || project.startDate;
-            const endDate = taskEndDate(task) || project.endDate;
-            return {
-              project,
-              label: String(task.name || '').trim(),
-              owner: String(task.collaborators || task.owner || project.owner || '').trim(),
-              startDate,
-              endDate,
-              status: STATUS_LIST.includes(task.status) ? task.status : '미진행',
-              progress: estimateProgress(task.status, startDate, endDate),
-              memo: String(task.description || '').trim()
-            };
-          });
+        : [];
 
       const safeRows = sourceRows.length ? sourceRows : [{
         project,
@@ -405,41 +361,64 @@
     return rows;
   }
 
-  function getTimelineRange(rows) {
-    const dates = [];
-    rows.forEach((row) => {
-      const start = parseDate(row.startDate);
-      const end = parseDate(row.endDate);
-      if (start) dates.push(start);
-      if (end) dates.push(end);
-    });
-    const today = new Date();
-    dates.push(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
-    if (!dates.length) {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      return { start, end: addDays(start, 30) };
+  function getTimelineRange() {
+    if (timelineView === 'daily') {
+      return { start: startOfDay(timelineCursor), end: endOfDay(timelineCursor) };
     }
-    const start = new Date(Math.min(...dates.map((date) => date.getTime())));
-    const end = new Date(Math.max(...dates.map((date) => date.getTime())));
-    return { start: addDays(start, -3), end: addDays(end, 7) };
+    if (timelineView === 'monthly') {
+      return { start: startOfMonth(timelineCursor), end: endOfMonth(timelineCursor) };
+    }
+    const start = startOfWeek(timelineCursor);
+    return { start, end: endOfDay(addDays(start, 6)) };
+  }
+
+  function formatTimelineRange(range) {
+    if (timelineView === 'daily') return formatDate(toDateInput(range.start));
+    if (timelineView === 'monthly') return `${range.start.getFullYear()}년 ${range.start.getMonth() + 1}월`;
+    return `${formatDate(toDateInput(range.start))} ~ ${formatDate(toDateInput(range.end))}`;
+  }
+
+  function rowOverlapsRange(row, range) {
+    const start = parseDate(row.startDate) || range.start;
+    const end = endOfDay(parseDate(row.endDate) || start);
+    return start <= range.end && end >= range.start;
+  }
+
+  function moveTimelinePeriod(direction) {
+    if (timelineView === 'daily') timelineCursor = addDays(timelineCursor, direction);
+    else if (timelineView === 'monthly') timelineCursor = addMonths(timelineCursor, direction);
+    else timelineCursor = addDays(timelineCursor, direction * 7);
+    renderOpsPage();
+  }
+
+  function setTimelineView(view) {
+    if (!TIMELINE_VIEW_LIST.includes(view)) return;
+    timelineView = view;
+    renderOpsPage();
+  }
+
+  function resetTimelineCursor() {
+    timelineCursor = new Date();
+    renderOpsPage();
   }
 
   function getAxisTicks(range) {
-    const totalDays = daysInclusive(range.start, range.end);
-    const step = totalDays <= 45 ? 1 : totalDays <= 120 ? 7 : 30;
+    const totalDays = daysInclusive(startOfDay(range.start), startOfDay(range.end));
+    const step = timelineView === 'daily' ? 1 : timelineView === 'weekly' ? 1 : totalDays <= 35 ? 5 : 7;
     const ticks = [];
-    for (let date = new Date(range.start); date <= range.end; date = addDays(date, step)) {
+    for (let date = startOfDay(range.start); date <= range.end; date = addDays(date, step)) {
       ticks.push({
-        label: step === 1 ? `${date.getMonth() + 1}/${date.getDate()}` : `${date.getMonth() + 1}/${date.getDate()}`,
+        label: timelineView === 'daily' ? formatDate(toDateInput(date)) : `${date.getMonth() + 1}/${date.getDate()}`,
         offset: ((date - range.start) / Math.max(1, range.end - range.start)) * 100
       });
     }
+    if (timelineView === 'daily' && ticks.length === 1) ticks[0].offset = 50;
     return ticks;
   }
 
   function getBarStyle(row, range) {
     const start = parseDate(row.startDate) || range.start;
-    const end = parseDate(row.endDate) || start;
+    const end = endOfDay(parseDate(row.endDate) || start);
     const left = clamp(((start - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
     const right = clamp(((end - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
     const width = Math.max(1.5, right - left);
@@ -455,15 +434,22 @@
   function renderTimeline(projects) {
     const target = $('opsTimeline');
     if (!target) return;
-    const rows = getTimelineRows(projects);
+    const range = getTimelineRange();
+    const rows = getTimelineRows(projects).filter((row) => rowOverlapsRange(row, range));
+    const label = $('opsTimelineLabel');
+    if (label) label.textContent = formatTimelineRange(range);
+    document.querySelectorAll('[data-ops-view]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.opsView === timelineView);
+    });
     if (!rows.length) {
-      target.innerHTML = '<div class="empty">타임라인 데이터 없음</div>';
+      target.innerHTML = '<div class="empty">해당 기간 타임라인 없음</div>';
       return;
     }
-    const range = getTimelineRange(rows);
     const axis = getAxisTicks(range);
     const today = new Date();
-    const todayOffset = clamp(((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const showToday = todayDate >= range.start && todayDate <= range.end;
+    const todayOffset = clamp(((todayDate - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
     target.innerHTML = `
       <div class="ops-timeline-grid">
         <div class="ops-timeline-row ops-timeline-head">
@@ -490,7 +476,7 @@
               <div>${getDoneDays(row) || 0}</div>
               <div>${row.progress}%</div>
               <div class="ops-bar-cell">
-                <span class="ops-today-line" style="left:${todayOffset}%"></span>
+                ${showToday ? `<span class="ops-today-line" style="left:${todayOffset}%"></span>` : ''}
                 <span class="ops-bar-bg" style="${getBarStyle(row, range)}"></span>
                 <span class="ops-bar-fill ops-task-${taskStatusClass(row.status)}" style="${row.progress <= 0 ? 'left:0;width:0;' : getBarStyle({ ...row, endDate: toDateInput(addDays(parseDate(row.startDate) || range.start, Math.max(0, Math.round((totalDays || 1) * row.progress / 100) - 1))) }, range)}"></span>
               </div>
@@ -592,6 +578,15 @@
           <div class="card ops-card">
             <div class="card-head">
               <div class="card-title">TIMELINE</div>
+              <div class="ops-timeline-controls">
+                <div class="ops-view-tabs">
+                  ${TIMELINE_VIEW_LIST.map((view) => `<button type="button" class="ops-view-btn" data-ops-view="${view}">${TIMELINE_VIEW_LABELS[view]}</button>`).join('')}
+                </div>
+                <button type="button" class="report-nav-btn" id="opsTimelinePrev">&#8249;</button>
+                <div class="report-label ops-timeline-label" id="opsTimelineLabel"></div>
+                <button type="button" class="report-nav-btn" id="opsTimelineNext">&#8250;</button>
+                <button type="button" class="btn btn-secondary ops-today-btn" id="opsTimelineToday">오늘</button>
+              </div>
             </div>
             <div class="ops-timeline-scroll" id="opsTimeline"></div>
           </div>
@@ -843,7 +838,7 @@
   function deleteEditorMeta() {
     const name = $('opsOriginalName')?.value || activeEditorProject;
     if (!name) return;
-    if (!window.confirm(`${name} 운영정보를 삭제할까요? 업무 목록은 삭제되지 않습니다.`)) return;
+    if (!window.confirm(`${name} 운영정보를 삭제할까요?`)) return;
     const ops = readOps();
     delete ops[name];
     writeJson(OPS_KEY, ops);
@@ -871,6 +866,12 @@
       activeStatusFilter = event.target.value;
       renderOpsPage();
     });
+    document.querySelectorAll('[data-ops-view]').forEach((button) => {
+      button.addEventListener('click', () => setTimelineView(button.dataset.opsView));
+    });
+    $('opsTimelinePrev')?.addEventListener('click', () => moveTimelinePeriod(-1));
+    $('opsTimelineNext')?.addEventListener('click', () => moveTimelinePeriod(1));
+    $('opsTimelineToday')?.addEventListener('click', resetTimelineCursor);
     $('opsAddProject')?.addEventListener('click', () => openEditor(null));
     $('opsEditSelected')?.addEventListener('click', () => {
       const projectName = activeProjectFilter === '전체' ? getFilteredProjects()[0]?.name || null : activeProjectFilter;
@@ -896,11 +897,8 @@
       if (removeButton) removeButton.closest('.ops-stage-row, .ops-mile-row')?.remove();
     });
 
-    ['saveBtn', 'detailModalSave', 'projectNoteSave'].forEach((id) => {
-      $(id)?.addEventListener('click', () => window.setTimeout(renderOpsPage, 120));
-    });
     window.addEventListener('storage', (event) => {
-      if ([TASKS_KEY, NOTES_KEY, ORDER_KEY, OPS_KEY].includes(event.key)) renderOpsPage();
+      if (event.key === OPS_KEY) renderOpsPage();
     });
   }
 

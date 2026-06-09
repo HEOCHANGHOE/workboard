@@ -2365,6 +2365,47 @@ body::before {
   flex-wrap: wrap;
 }
 .ops-filter { width: min(180px, 42vw); min-height: 40px; }
+.ops-timeline-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ops-view-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-2);
+}
+.ops-view-btn {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.ops-view-btn.active {
+  background: var(--ink);
+  color: var(--card);
+}
+.ops-timeline-label {
+  min-width: 170px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ops-today-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
 .ops-summary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2675,6 +2716,9 @@ body::before {
   .ops-head { align-items: stretch; flex-direction: column; }
   .ops-actions { justify-content: stretch; }
   .ops-actions > * { flex: 1 1 150px; }
+  .ops-timeline-controls { justify-content: stretch; width: 100%; }
+  .ops-view-tabs { flex: 1 1 100%; justify-content: center; }
+  .ops-timeline-label { flex: 1 1 150px; min-width: 140px; }
   .ops-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ops-form-grid, .ops-stage-row, .ops-mile-row { grid-template-columns: 1fr; }
   .ops-row-remove { justify-self: end; }
