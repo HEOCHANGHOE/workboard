@@ -79,6 +79,12 @@
     return next;
   }
 
+  function addYears(date, years) {
+    const next = new Date(date);
+    next.setFullYear(next.getFullYear() + years);
+    return next;
+  }
+
   function startOfDay(date) {
     const next = new Date(date);
     next.setHours(0, 0, 0, 0);
@@ -103,6 +109,14 @@
 
   function endOfMonth(date) {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
+
+  function startOfYear(date) {
+    return new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0);
+  }
+
+  function endOfYear(date) {
+    return new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
   }
 
   function daysInclusive(startDate, endDate) {
@@ -363,25 +377,25 @@
 
   function getTimelineRange() {
     if (timelineView === 'daily') {
-      return { start: startOfDay(timelineCursor), end: endOfDay(timelineCursor) };
+      const start = startOfWeek(timelineCursor);
+      return { start, end: endOfDay(addDays(start, 6)) };
     }
     if (timelineView === 'monthly') {
-      return { start: startOfMonth(timelineCursor), end: endOfMonth(timelineCursor) };
+      return { start: startOfYear(timelineCursor), end: endOfYear(timelineCursor) };
     }
-    const start = startOfWeek(timelineCursor);
-    return { start, end: endOfDay(addDays(start, 6)) };
+    return { start: startOfMonth(timelineCursor), end: endOfMonth(timelineCursor) };
   }
 
   function formatTimelineRange(range) {
-    if (timelineView === 'daily') return formatDate(toDateInput(range.start));
-    if (timelineView === 'monthly') return `${range.start.getFullYear()}년 ${range.start.getMonth() + 1}월`;
-    return `${formatDate(toDateInput(range.start))} ~ ${formatDate(toDateInput(range.end))}`;
+    if (timelineView === 'daily') return `${formatDate(toDateInput(range.start))} ~ ${formatDate(toDateInput(range.end))}`;
+    if (timelineView === 'monthly') return `${range.start.getFullYear()}년`;
+    return `${range.start.getFullYear()}년 ${range.start.getMonth() + 1}월`;
   }
 
   function moveTimelinePeriod(direction) {
-    if (timelineView === 'daily') timelineCursor = addDays(timelineCursor, direction);
-    else if (timelineView === 'monthly') timelineCursor = addMonths(timelineCursor, direction);
-    else timelineCursor = addDays(timelineCursor, direction * 7);
+    if (timelineView === 'daily') timelineCursor = addDays(timelineCursor, direction * 7);
+    else if (timelineView === 'monthly') timelineCursor = addYears(timelineCursor, direction);
+    else timelineCursor = addMonths(timelineCursor, direction);
     renderOpsPage();
   }
 
@@ -397,16 +411,45 @@
   }
 
   function getAxisTicks(range) {
-    const totalDays = daysInclusive(startOfDay(range.start), startOfDay(range.end));
-    const step = timelineView === 'daily' ? 1 : timelineView === 'weekly' ? 1 : totalDays <= 35 ? 5 : 7;
+    const centerOffset = (start, end) => {
+      const midpoint = start.getTime() + ((end.getTime() - start.getTime()) / 2);
+      return ((midpoint - range.start.getTime()) / Math.max(1, range.end.getTime() - range.start.getTime())) * 100;
+    };
     const ticks = [];
-    for (let date = startOfDay(range.start); date <= range.end; date = addDays(date, step)) {
+
+    if (timelineView === 'daily') {
+      for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+        const start = addDays(range.start, dayIndex);
+        ticks.push({
+          label: `${start.getMonth() + 1}/${start.getDate()}`,
+          offset: centerOffset(start, endOfDay(start))
+        });
+      }
+      return ticks;
+    }
+
+    if (timelineView === 'weekly') {
+      let weekStart = startOfDay(range.start);
+      let weekIndex = 1;
+      while (weekStart <= range.end) {
+        const weekEnd = endOfDay(new Date(Math.min(addDays(weekStart, 6).getTime(), range.end.getTime())));
+        ticks.push({
+          label: `${weekIndex}주차`,
+          offset: centerOffset(weekStart, weekEnd)
+        });
+        weekStart = addDays(weekStart, 7);
+        weekIndex += 1;
+      }
+      return ticks;
+    }
+
+    for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+      const start = new Date(range.start.getFullYear(), monthIndex, 1, 0, 0, 0, 0);
       ticks.push({
-        label: timelineView === 'daily' ? formatDate(toDateInput(date)) : `${date.getMonth() + 1}/${date.getDate()}`,
-        offset: ((date - range.start) / Math.max(1, range.end - range.start)) * 100
+        label: `${monthIndex + 1}월`,
+        offset: centerOffset(start, endOfMonth(start))
       });
     }
-    if (timelineView === 'daily' && ticks.length === 1) ticks[0].offset = 50;
     return ticks;
   }
 
@@ -455,8 +498,9 @@
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const showToday = todayDate >= range.start && todayDate <= range.end;
     const todayOffset = clamp(((todayDate - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
+    const gridStep = 100 / Math.max(1, axis.length);
     target.innerHTML = `
-      <div class="ops-timeline-grid">
+      <div class="ops-timeline-grid ops-timeline-${timelineView}" style="--ops-grid-step:${gridStep}%">
         <div class="ops-timeline-row ops-timeline-head">
           <div>프로젝트명</div>
           <div>task</div>
@@ -915,7 +959,7 @@
     patchWorkBoardRefresh();
     bindEvents();
     renderOpsPage();
-    window.ProjectOpsApp = { render: renderOpsPage, show: showOpsPage };
+    window.ProjectOpsApp = { render: renderOpsPage, show: showOpsPage, setView: setTimelineView, movePeriod: moveTimelinePeriod };
     if (sessionStorage.getItem(ACTIVE_TAB_KEY) === 'ops' || sessionStorage.getItem(OPS_ACTIVE_KEY) === '1') showOpsPage();
   }
 
