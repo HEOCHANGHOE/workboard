@@ -9,9 +9,9 @@
   const OPS_STATUS_LIST = ['정상', '주의', '지연', '보류', '완료'];
   const TIMELINE_VIEW_LIST = ['daily', 'weekly', 'monthly'];
   const TIMELINE_VIEW_LABELS = {
-    daily: '데일리',
-    weekly: '위클리',
-    monthly: '먼슬리'
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly'
   };
 
   const $ = (id) => document.getElementById(id);
@@ -378,12 +378,6 @@
     return `${formatDate(toDateInput(range.start))} ~ ${formatDate(toDateInput(range.end))}`;
   }
 
-  function rowOverlapsRange(row, range) {
-    const start = parseDate(row.startDate) || range.start;
-    const end = endOfDay(parseDate(row.endDate) || start);
-    return start <= range.end && end >= range.start;
-  }
-
   function moveTimelinePeriod(direction) {
     if (timelineView === 'daily') timelineCursor = addDays(timelineCursor, direction);
     else if (timelineView === 'monthly') timelineCursor = addMonths(timelineCursor, direction);
@@ -419,10 +413,21 @@
   function getBarStyle(row, range) {
     const start = parseDate(row.startDate) || range.start;
     const end = endOfDay(parseDate(row.endDate) || start);
-    const left = clamp(((start - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
-    const right = clamp(((end - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
+    if (end < range.start || start > range.end) return '';
+    const visibleStart = start < range.start ? range.start : start;
+    const visibleEnd = end > range.end ? range.end : end;
+    const left = clamp(((visibleStart - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
+    const right = clamp(((visibleEnd - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
     const width = Math.max(1.5, right - left);
     return `left:${left}%;width:${width}%;`;
+  }
+
+  function getProgressBarStyle(row, range, totalDays) {
+    if (row.progress <= 0) return '';
+    const start = parseDate(row.startDate) || range.start;
+    const doneDays = Math.max(0, Math.round((totalDays || 1) * row.progress / 100) - 1);
+    const progressEndDate = toDateInput(addDays(start, doneDays));
+    return getBarStyle({ ...row, endDate: progressEndDate }, range);
   }
 
   function getDoneDays(row) {
@@ -435,7 +440,7 @@
     const target = $('opsTimeline');
     if (!target) return;
     const range = getTimelineRange();
-    const rows = getTimelineRows(projects).filter((row) => rowOverlapsRange(row, range));
+    const rows = getTimelineRows(projects);
     const label = $('opsTimelineLabel');
     if (label) label.textContent = formatTimelineRange(range);
     document.querySelectorAll('[data-ops-view]').forEach((button) => {
@@ -465,6 +470,8 @@
         </div>
         ${rows.map((row) => {
           const totalDays = daysInclusive(parseDate(row.startDate), parseDate(row.endDate));
+          const barStyle = getBarStyle(row, range);
+          const progressBarStyle = getProgressBarStyle(row, range, totalDays);
           return `
             <div class="ops-timeline-row">
               <div class="ops-project-cell">${row.firstInProject ? escapeHtml(row.project.name) : ''}</div>
@@ -475,10 +482,10 @@
               <div>${totalDays || '-'}</div>
               <div>${getDoneDays(row) || 0}</div>
               <div>${row.progress}%</div>
-              <div class="ops-bar-cell">
+              <div class="ops-bar-cell ${barStyle ? '' : 'ops-outside-range'}">
                 ${showToday ? `<span class="ops-today-line" style="left:${todayOffset}%"></span>` : ''}
-                <span class="ops-bar-bg" style="${getBarStyle(row, range)}"></span>
-                <span class="ops-bar-fill ops-task-${taskStatusClass(row.status)}" style="${row.progress <= 0 ? 'left:0;width:0;' : getBarStyle({ ...row, endDate: toDateInput(addDays(parseDate(row.startDate) || range.start, Math.max(0, Math.round((totalDays || 1) * row.progress / 100) - 1))) }, range)}"></span>
+                ${barStyle ? `<span class="ops-bar-bg" style="${barStyle}"></span>` : ''}
+                ${progressBarStyle ? `<span class="ops-bar-fill ops-task-${taskStatusClass(row.status)}" style="${progressBarStyle}"></span>` : ''}
               </div>
             </div>
           `;

@@ -2584,6 +2584,10 @@ body::before {
   min-height: 38px;
   background-color: var(--card-2);
 }
+.ops-bar-cell.ops-outside-range {
+  background-image: repeating-linear-gradient(to right, rgba(0,0,0,0.035) 0, rgba(0,0,0,0.035) 1px, transparent 1px, transparent 7.142%);
+  opacity: 0.72;
+}
 .ops-bar-bg, .ops-bar-fill {
   position: absolute;
   top: 50%;
