@@ -273,6 +273,20 @@
     });
   }
 
+  function ensureVisibleFilters(projects) {
+    if (activeProjectFilter !== '전체' && !projects.some((project) => project.name === activeProjectFilter)) {
+      activeProjectFilter = '전체';
+    }
+    if (activeStatusFilter !== '전체' && !OPS_STATUS_LIST.includes(activeStatusFilter)) {
+      activeStatusFilter = '전체';
+    }
+    const filtered = getFilteredProjects(projects);
+    if (projects.length && !filtered.length) {
+      activeProjectFilter = '전체';
+      activeStatusFilter = '전체';
+    }
+  }
+
   function renderSummary(projects) {
     const total = projects.length;
     const active = projects.filter((project) => project.status !== '완료' && project.status !== '보류').length;
@@ -349,6 +363,7 @@
       const sourceRows = project.stages.length
         ? project.stages.map((stage) => ({
             project,
+            stageId: stage.id,
             label: stage.name,
             owner: stage.owner || project.owner,
             startDate: stage.startDate || project.startDate,
@@ -361,6 +376,7 @@
 
       const safeRows = sourceRows.length ? sourceRows : [{
         project,
+        stageId: '',
         label: '운영 계획',
         owner: project.owner,
         startDate: project.startDate,
@@ -454,23 +470,28 @@
   }
 
   function getBarStyle(row, range) {
+    const metrics = getBarMetrics(row, range);
+    return metrics ? `left:${metrics.left}%;width:${metrics.width}%;` : '';
+  }
+
+  function getBarMetrics(row, range) {
     const start = parseDate(row.startDate) || range.start;
     const end = endOfDay(parseDate(row.endDate) || start);
-    if (end < range.start || start > range.end) return '';
+    if (end < range.start || start > range.end) return null;
     const visibleStart = start < range.start ? range.start : start;
     const visibleEnd = end > range.end ? range.end : end;
     const left = clamp(((visibleStart - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
     const right = clamp(((visibleEnd - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
     const width = Math.max(1.5, right - left);
-    return `left:${left}%;width:${width}%;`;
+    return { left, width };
   }
 
-  function getProgressBarStyle(row, range, totalDays) {
+  function getProgressBarStyle(row, range) {
     if (row.progress <= 0) return '';
-    const start = parseDate(row.startDate) || range.start;
-    const doneDays = Math.max(0, Math.round((totalDays || 1) * row.progress / 100) - 1);
-    const progressEndDate = toDateInput(addDays(start, doneDays));
-    return getBarStyle({ ...row, endDate: progressEndDate }, range);
+    const metrics = getBarMetrics(row, range);
+    if (!metrics) return '';
+    const progressWidth = metrics.width * (clamp(row.progress, 0, 100) / 100);
+    return `left:${metrics.left}%;width:${Math.max(1.5, progressWidth)}%;`;
   }
 
   function getDoneDays(row) {
@@ -515,9 +536,9 @@
         ${rows.map((row) => {
           const totalDays = daysInclusive(parseDate(row.startDate), parseDate(row.endDate));
           const barStyle = getBarStyle(row, range);
-          const progressBarStyle = getProgressBarStyle(row, range, totalDays);
+          const progressBarStyle = getProgressBarStyle(row, range);
           return `
-            <div class="ops-timeline-row">
+            <div class="ops-timeline-row ops-timeline-task-row" role="button" tabindex="0" data-ops-stage-project="${escapeHtml(row.project.name)}" data-ops-stage-id="${escapeHtml(row.stageId || '')}">
               <div class="ops-project-cell">${row.firstInProject ? escapeHtml(row.project.name) : ''}</div>
               <div class="ops-task-cell" title="${escapeHtml(row.memo || row.label)}">${escapeHtml(row.label || '-')}</div>
               <div>${escapeHtml(row.owner || '-')}</div>
@@ -580,8 +601,9 @@
     `).join('');
   }
 
-  function renderOpsPage() {
+  function renderOpsPage(options = {}) {
     const projects = getProjects();
+    if (options.ensureVisible) ensureVisibleFilters(projects);
     renderFilters(projects);
     const filtered = getFilteredProjects(projects);
     renderSummary(filtered);
@@ -637,6 +659,7 @@
                 <div class="report-label ops-timeline-label" id="opsTimelineLabel"></div>
                 <button type="button" class="report-nav-btn" id="opsTimelineNext">&#8250;</button>
                 <button type="button" class="btn btn-secondary ops-today-btn" id="opsTimelineToday">오늘</button>
+                <button type="button" class="btn btn-secondary ops-today-btn" id="opsTimelineAddTask">Task 추가</button>
               </div>
             </div>
             <div class="ops-timeline-scroll" id="opsTimeline"></div>
@@ -770,6 +793,7 @@
   function createStageRow(stage = {}) {
     const row = document.createElement('div');
     row.className = 'ops-stage-row';
+    if (stage.id) row.dataset.stageId = String(stage.id);
     row.innerHTML = `
       <input class="input" data-stage-field="name" type="text" placeholder="단계명" value="${escapeHtml(stage.name || '')}">
       <input class="input" data-stage-field="owner" type="text" placeholder="담당" value="${escapeHtml(stage.owner || '')}">
@@ -785,6 +809,7 @@
   function createMilestoneRow(milestone = {}) {
     const row = document.createElement('div');
     row.className = 'ops-mile-row';
+    if (milestone.id) row.dataset.mileId = String(milestone.id);
     row.innerHTML = `
       <input class="input" data-mile-field="title" type="text" placeholder="마일스톤" value="${escapeHtml(milestone.title || '')}">
       <input class="input" data-mile-field="date" type="date" value="${escapeHtml(milestone.date || '')}">
@@ -794,7 +819,30 @@
     return row;
   }
 
-  function fillEditor(projectName = '') {
+  function getStageDefaults(project = {}) {
+    const range = getTimelineRange();
+    return {
+      name: '',
+      owner: project.owner || '',
+      startDate: project.startDate || toDateInput(range.start),
+      endDate: project.endDate || toDateInput(range.end),
+      status: '미진행',
+      progress: 0
+    };
+  }
+
+  function focusStageRow(stageId) {
+    if (!stageId) return;
+    window.setTimeout(() => {
+      const row = Array.from(document.querySelectorAll('.ops-stage-row')).find((item) => item.dataset.stageId === stageId);
+      if (!row) return;
+      row.classList.add('focused');
+      row.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      row.querySelector('[data-stage-field="name"]')?.focus();
+    }, 0);
+  }
+
+  function fillEditor(projectName = '', options = {}) {
     const createNew = projectName == null;
     const names = getProjectNames();
     const name = createNew ? '' : (projectName || names[0] || '');
@@ -825,6 +873,11 @@
     stageList.innerHTML = '';
     project.stages.forEach((stage) => stageList.appendChild(createStageRow(stage)));
     if (!project.stages.length) stageList.appendChild(createStageRow({ name: '기획', owner: project.owner, startDate: project.startDate, endDate: project.endDate, status: '진행중', progress: project.progress || 0 }));
+    if (options.addStage && project.name) {
+      const row = createStageRow(getStageDefaults(project));
+      stageList.appendChild(row);
+      window.setTimeout(() => row.querySelector('[data-stage-field="name"]')?.focus(), 0);
+    }
 
     const mileList = $('opsMilestoneList');
     mileList.innerHTML = '';
@@ -833,12 +886,13 @@
 
     $('opsModalTitle').textContent = project.name ? `${project.name} 운영정보` : '프로젝트 운영정보';
     $('opsModalSub').textContent = project.updatedAt ? `마지막 업데이트: ${formatDate(String(project.updatedAt).slice(0, 10))}` : '새 운영정보';
+    if (options.focusStageId) focusStageRow(options.focusStageId);
   }
 
-  function openEditor(projectName = '') {
-    fillEditor(projectName);
+  function openEditor(projectName = '', options = {}) {
+    fillEditor(projectName, options);
     $('opsModal')?.classList.add('open');
-    $('opsProjectName')?.focus();
+    if (!options.focusStageId && !options.addStage) $('opsProjectName')?.focus();
   }
 
   function closeEditor() {
@@ -849,6 +903,8 @@
   function collectRows(selector, fieldSelector, normalizer) {
     return Array.from(document.querySelectorAll(selector)).map((row, index) => {
       const raw = {};
+      if (row.dataset.stageId) raw.id = row.dataset.stageId;
+      if (row.dataset.mileId) raw.id = row.dataset.mileId;
       row.querySelectorAll(fieldSelector).forEach((field) => {
         const key = field.dataset.stageField || field.dataset.mileField;
         raw[key] = field.value;
@@ -881,9 +937,8 @@
       updatedAt: new Date().toISOString()
     };
     writeJson(OPS_KEY, ops);
-    activeProjectFilter = name;
     closeEditor();
-    renderOpsPage();
+    renderOpsPage({ ensureVisible: true });
   }
 
   function deleteEditorMeta() {
@@ -895,7 +950,16 @@
     writeJson(OPS_KEY, ops);
     activeProjectFilter = '전체';
     closeEditor();
-    renderOpsPage();
+    renderOpsPage({ ensureVisible: true });
+  }
+
+  function getProjectForTimelineAdd() {
+    if (activeProjectFilter !== '전체') return activeProjectFilter;
+    return getFilteredProjects()[0]?.name || null;
+  }
+
+  function openTimelineTaskAdd() {
+    openEditor(getProjectForTimelineAdd(), { addStage: true });
   }
 
   function bindEvents() {
@@ -923,6 +987,7 @@
     $('opsTimelinePrev')?.addEventListener('click', () => moveTimelinePeriod(-1));
     $('opsTimelineNext')?.addEventListener('click', () => moveTimelinePeriod(1));
     $('opsTimelineToday')?.addEventListener('click', resetTimelineCursor);
+    $('opsTimelineAddTask')?.addEventListener('click', openTimelineTaskAdd);
     $('opsAddProject')?.addEventListener('click', () => openEditor(null));
     $('opsEditSelected')?.addEventListener('click', () => {
       const projectName = activeProjectFilter === '전체' ? getFilteredProjects()[0]?.name || null : activeProjectFilter;
@@ -939,6 +1004,11 @@
     });
 
     document.body.addEventListener('click', (event) => {
+      const timelineRow = event.target?.closest?.('[data-ops-stage-project]');
+      if (timelineRow) {
+        openEditor(timelineRow.dataset.opsStageProject || '', { focusStageId: timelineRow.dataset.opsStageId || '' });
+        return;
+      }
       const editButton = event.target?.closest?.('[data-ops-edit]');
       if (editButton) {
         openEditor(editButton.dataset.opsEdit || '');
@@ -946,6 +1016,14 @@
       }
       const removeButton = event.target?.closest?.('[data-remove-row]');
       if (removeButton) removeButton.closest('.ops-stage-row, .ops-mile-row')?.remove();
+    });
+
+    document.body.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const timelineRow = event.target?.closest?.('[data-ops-stage-project]');
+      if (!timelineRow) return;
+      event.preventDefault();
+      openEditor(timelineRow.dataset.opsStageProject || '', { focusStageId: timelineRow.dataset.opsStageId || '' });
     });
 
     window.addEventListener('storage', (event) => {

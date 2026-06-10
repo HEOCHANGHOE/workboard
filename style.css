@@ -2540,6 +2540,16 @@ body::before {
   background: var(--card);
 }
 .ops-timeline-row:last-child { border-bottom: 0; }
+.ops-timeline-task-row {
+  cursor: pointer;
+}
+.ops-timeline-task-row:hover > div {
+  background-color: rgba(0,113,227,0.035);
+}
+.ops-timeline-task-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
 .ops-timeline-row > div {
   min-width: 0;
   padding: 8px 9px;
@@ -2689,6 +2699,13 @@ body::before {
   grid-template-columns: minmax(140px, 1.3fr) minmax(90px, 0.8fr) 132px 132px 112px 88px 32px;
   gap: 8px;
   align-items: center;
+}
+.ops-stage-row.focused {
+  padding: 8px;
+  margin: -8px;
+  border: 1px solid rgba(0,113,227,0.35);
+  border-radius: 8px;
+  background: var(--blue-bg);
 }
 .ops-mile-row {
   display: grid;
