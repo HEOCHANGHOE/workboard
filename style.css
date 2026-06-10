@@ -2527,21 +2527,21 @@ body::before {
   padding: 0 14px 14px;
 }
 .ops-timeline-grid {
-  min-width: 1240px;
+  min-width: 1420px;
   border: 0.5px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
 }
 .ops-timeline-row {
   display: grid;
-  grid-template-columns: 150px 170px 92px 92px 92px 64px 76px 68px minmax(520px, 1fr);
+  grid-template-columns: 190px 240px 112px 112px 112px 64px 76px 86px minmax(520px, 1fr);
   min-height: 38px;
   border-bottom: 0.5px solid var(--line-soft);
   background: var(--card);
 }
 .ops-timeline-row:last-child { border-bottom: 0; }
 .ops-timeline-task-row {
-  cursor: pointer;
+  cursor: default;
 }
 .ops-timeline-task-row:hover > div {
   background-color: rgba(0,113,227,0.035);
@@ -2578,6 +2578,82 @@ body::before {
 .ops-task-cell {
   color: var(--text) !important;
   font-weight: 650;
+}
+.ops-inline-project,
+.ops-inline-task,
+.ops-inline-progress {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+.ops-project-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ops-inline-input {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 2px 6px;
+  border: 0.5px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.ops-inline-input:hover {
+  border-color: var(--line);
+  background: var(--card);
+}
+.ops-inline-input:focus {
+  border-color: var(--blue);
+  outline: 0;
+  background: var(--card);
+  box-shadow: 0 0 0 2px rgba(0,113,227,0.12);
+}
+.ops-date-input {
+  padding-right: 2px;
+}
+.ops-progress-input {
+  width: 52px;
+  text-align: right;
+}
+.ops-inline-progress span {
+  color: var(--text3);
+  font-size: 10.5px;
+}
+.ops-order-controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+.ops-order-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0.5px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text3);
+  font-size: 11px;
+  font-weight: 800;
+}
+.ops-order-btn:hover:not(:disabled) {
+  color: var(--blue);
+  border-color: rgba(0,113,227,0.35);
+  background: var(--blue-bg);
+}
+.ops-order-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
 }
 .ops-axis, .ops-bar-cell {
   position: relative;

@@ -133,11 +133,45 @@
     return ops && typeof ops === 'object' && !Array.isArray(ops) ? ops : {};
   }
 
-  function getProjectNames() {
-    return Object.keys(readOps())
+  function getProjectEntries(ops = readOps()) {
+    return Object.keys(ops)
       .map((name) => String(name || '').trim())
       .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, 'ko'));
+      .map((name) => {
+        const order = Number(ops[name]?.order);
+        return {
+          name,
+          order: Number.isFinite(order) ? order : null
+        };
+      })
+      .sort((a, b) => {
+        if (a.order != null || b.order != null) {
+          const orderDiff = (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
+          if (orderDiff !== 0) return orderDiff;
+        }
+        return a.name.localeCompare(b.name, 'ko');
+      });
+  }
+
+  function getProjectNames() {
+    return getProjectEntries().map((entry) => entry.name);
+  }
+
+  function getNextProjectOrder(ops) {
+    const orders = getProjectEntries(ops)
+      .map((entry) => entry.order)
+      .filter((order) => order != null);
+    return orders.length ? Math.max(...orders) + 1 : getProjectEntries(ops).length;
+  }
+
+  function saveProjectOrder(ops, orderedNames) {
+    orderedNames.forEach((name, index) => {
+      if (ops[name]) ops[name] = { ...ops[name], order: index };
+    });
+  }
+
+  function createStageId(index = 0) {
+    return `stage_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 7)}`;
   }
 
   function estimateProgress(status, startDate, endDate) {
@@ -156,7 +190,7 @@
     const endDate = normalizeDate(stage?.endDate);
     const explicitProgress = Number(stage?.progress);
     return {
-      id: String(stage?.id || `stage_${Date.now()}_${index}`),
+      id: String(stage?.id || createStageId(index)),
       name: String(stage?.name || '').trim(),
       owner: String(stage?.owner || fallbackOwner || '').trim(),
       startDate,
@@ -235,6 +269,7 @@
       issue: String(saved.issue || '').trim(),
       stages,
       milestones,
+      order: Number.isFinite(Number(saved.order)) ? Number(saved.order) : null,
       updatedAt: saved.updatedAt || ''
     };
     project.progress = projectProgress(project);
@@ -500,7 +535,44 @@
     return Math.round(daysInclusive(start, end) * (clamp(row.progress, 0, 100) / 100));
   }
 
-  function renderTimeline(projects) {
+  function renderProjectTimelineCell(row) {
+    if (!row.firstInProject) return '';
+    return `
+      <div class="ops-inline-project">
+        <span class="ops-project-name" title="${escapeHtml(row.project.name)}">${escapeHtml(row.project.name)}</span>
+        <span class="ops-order-controls">
+          <button type="button" class="ops-order-btn" data-ops-move-project="up" data-ops-project-name="${escapeHtml(row.project.name)}" title="프로젝트 위로">&#8593;</button>
+          <button type="button" class="ops-order-btn" data-ops-move-project="down" data-ops-project-name="${escapeHtml(row.project.name)}" title="프로젝트 아래로">&#8595;</button>
+        </span>
+      </div>
+    `;
+  }
+
+  function renderTaskTimelineCell(row) {
+    return `
+      <div class="ops-inline-task">
+        <input class="ops-inline-input ops-task-name-input" data-ops-inline-field="name" type="text" value="${escapeHtml(row.label || '')}" title="${escapeHtml(row.memo || row.label || '')}" placeholder="Task">
+        <span class="ops-order-controls">
+          <button type="button" class="ops-order-btn" data-ops-move-stage="up" data-ops-stage-project="${escapeHtml(row.project.name)}" data-ops-stage-id="${escapeHtml(row.stageId || '')}" title="Task 위로" ${row.stageId ? '' : 'disabled'}>&#8593;</button>
+          <button type="button" class="ops-order-btn" data-ops-move-stage="down" data-ops-stage-project="${escapeHtml(row.project.name)}" data-ops-stage-id="${escapeHtml(row.stageId || '')}" title="Task 아래로" ${row.stageId ? '' : 'disabled'}>&#8595;</button>
+        </span>
+      </div>
+    `;
+  }
+
+  function focusTimelineInput(stageId, field = 'name') {
+    if (!stageId) return;
+    window.setTimeout(() => {
+      const target = $('opsTimeline');
+      const row = Array.from(target?.querySelectorAll('[data-ops-stage-id]') || [])
+        .find((item) => item.dataset.opsStageId === stageId);
+      const input = row?.querySelector(`[data-ops-inline-field="${field}"]`) || row?.querySelector('[data-ops-inline-field="name"]');
+      input?.focus();
+      if (input?.select && input.type !== 'date') input.select();
+    }, 0);
+  }
+
+  function renderTimeline(projects, options = {}) {
     const target = $('opsTimeline');
     if (!target) return;
     const range = getTimelineRange();
@@ -538,15 +610,20 @@
           const barStyle = getBarStyle(row, range);
           const progressBarStyle = getProgressBarStyle(row, range);
           return `
-            <div class="ops-timeline-row ops-timeline-task-row" role="button" tabindex="0" data-ops-stage-project="${escapeHtml(row.project.name)}" data-ops-stage-id="${escapeHtml(row.stageId || '')}">
-              <div class="ops-project-cell">${row.firstInProject ? escapeHtml(row.project.name) : ''}</div>
-              <div class="ops-task-cell" title="${escapeHtml(row.memo || row.label)}">${escapeHtml(row.label || '-')}</div>
-              <div>${escapeHtml(row.owner || '-')}</div>
-              <div>${escapeHtml(formatDate(row.startDate))}</div>
-              <div>${escapeHtml(formatDate(row.endDate))}</div>
+            <div class="ops-timeline-row ops-timeline-task-row" data-ops-stage-project="${escapeHtml(row.project.name)}" data-ops-stage-id="${escapeHtml(row.stageId || '')}">
+              <div class="ops-project-cell">${renderProjectTimelineCell(row)}</div>
+              <div class="ops-task-cell">${renderTaskTimelineCell(row)}</div>
+              <div><input class="ops-inline-input" data-ops-inline-field="owner" type="text" value="${escapeHtml(row.owner || '')}" placeholder="담당"></div>
+              <div><input class="ops-inline-input ops-date-input" data-ops-inline-field="startDate" type="date" value="${escapeHtml(normalizeDate(row.startDate))}"></div>
+              <div><input class="ops-inline-input ops-date-input" data-ops-inline-field="endDate" type="date" value="${escapeHtml(normalizeDate(row.endDate))}"></div>
               <div>${totalDays || '-'}</div>
               <div>${getDoneDays(row) || 0}</div>
-              <div>${row.progress}%</div>
+              <div>
+                <div class="ops-inline-progress">
+                  <input class="ops-inline-input ops-progress-input" data-ops-inline-field="progress" type="number" min="0" max="100" value="${row.progress}">
+                  <span>%</span>
+                </div>
+              </div>
               <div class="ops-bar-cell ${barStyle ? '' : 'ops-outside-range'}">
                 ${showToday ? `<span class="ops-today-line" style="left:${todayOffset}%"></span>` : ''}
                 ${barStyle ? `<span class="ops-bar-bg" style="${barStyle}"></span>` : ''}
@@ -557,6 +634,7 @@
         }).join('')}
       </div>
     `;
+    if (options.focusTimelineStageId) focusTimelineInput(options.focusTimelineStageId, options.focusTimelineField);
   }
 
   function renderMilestones(projects) {
@@ -608,7 +686,7 @@
     const filtered = getFilteredProjects(projects);
     renderSummary(filtered);
     renderProjectList(filtered);
-    renderTimeline(filtered);
+    renderTimeline(filtered, options);
     renderMilestones(filtered);
     renderIssueBoard(filtered);
   }
@@ -921,10 +999,13 @@
     }
     const originalName = $('opsOriginalName')?.value || activeEditorProject;
     const ops = readOps();
+    const existing = ops[originalName] || ops[name] || {};
+    const existingOrder = Number(existing.order);
     if (originalName && originalName !== name) delete ops[originalName];
     const stages = collectRows('.ops-stage-row', '[data-stage-field]', normalizeStage).filter((stage) => stage.name);
     const milestones = collectRows('.ops-mile-row', '[data-mile-field]', normalizeMilestone).filter((milestone) => milestone.title);
     ops[name] = {
+      order: Number.isFinite(existingOrder) ? existingOrder : getNextProjectOrder(ops),
       goal: $('opsGoal')?.value.trim() || '',
       owner: $('opsOwner')?.value.trim() || '',
       status: $('opsStatus')?.value || '정상',
@@ -939,6 +1020,70 @@
     writeJson(OPS_KEY, ops);
     closeEditor();
     renderOpsPage({ ensureVisible: true });
+  }
+
+  function getStatusForProgress(progress) {
+    if (progress >= 100) return '완료';
+    if (progress > 0) return '진행중';
+    return '미진행';
+  }
+
+  function getInlineStageSeed(project) {
+    const defaults = getStageDefaults(project);
+    return normalizeStage({
+      ...defaults,
+      id: createStageId(project.stages.length),
+      name: project.stages.length ? '새 Task' : '운영 계획',
+      status: getStatusForProgress(Number(defaults.progress) || 0)
+    }, project.stages.length, project.owner);
+  }
+
+  function saveTimelineStageField(projectName, stageId, field, value) {
+    if (!projectName || !['name', 'owner', 'startDate', 'endDate', 'progress'].includes(field)) return;
+    const ops = readOps();
+    if (!ops[projectName]) return;
+    const project = getProjectModel(projectName, ops);
+    const stages = project.stages.slice();
+    let stageIndex = stages.findIndex((stage) => stage.id === stageId);
+    if (stageIndex < 0) {
+      stages.push(getInlineStageSeed(project));
+      stageIndex = stages.length - 1;
+    }
+
+    const stage = { ...stages[stageIndex] };
+    if (field === 'name') {
+      const text = String(value || '').trim();
+      if (!text) {
+        renderOpsPage({ ensureVisible: true, focusTimelineStageId: stage.id, focusTimelineField: field });
+        return;
+      }
+      stage.name = text;
+    } else if (field === 'owner') {
+      stage.owner = String(value || '').trim();
+    } else if (field === 'startDate') {
+      stage.startDate = normalizeDate(value);
+      if (parseDate(stage.startDate) && parseDate(stage.endDate) && parseDate(stage.endDate) < parseDate(stage.startDate)) {
+        stage.endDate = stage.startDate;
+      }
+    } else if (field === 'endDate') {
+      stage.endDate = normalizeDate(value);
+      if (parseDate(stage.startDate) && parseDate(stage.endDate) && parseDate(stage.endDate) < parseDate(stage.startDate)) {
+        stage.startDate = stage.endDate;
+      }
+    } else if (field === 'progress') {
+      const progress = Number(value);
+      stage.progress = Number.isFinite(progress) ? clamp(Math.round(progress), 0, 100) : stage.progress;
+      stage.status = getStatusForProgress(stage.progress);
+    }
+
+    stages[stageIndex] = stage;
+    ops[projectName] = {
+      ...ops[projectName],
+      stages,
+      updatedAt: new Date().toISOString()
+    };
+    writeJson(OPS_KEY, ops);
+    renderOpsPage({ ensureVisible: true, focusTimelineStageId: stage.id, focusTimelineField: field });
   }
 
   function deleteEditorMeta() {
@@ -959,7 +1104,83 @@
   }
 
   function openTimelineTaskAdd() {
-    openEditor(getProjectForTimelineAdd(), { addStage: true });
+    const projectName = getProjectForTimelineAdd();
+    if (!projectName) {
+      openEditor(null);
+      return;
+    }
+    const ops = readOps();
+    if (!ops[projectName]) return;
+    const project = getProjectModel(projectName, ops);
+    const stages = project.stages.slice();
+    const stage = normalizeStage({
+      ...getStageDefaults(project),
+      id: createStageId(stages.length),
+      name: '새 Task'
+    }, stages.length, project.owner);
+    stages.push(stage);
+    ops[projectName] = {
+      ...ops[projectName],
+      stages,
+      updatedAt: new Date().toISOString()
+    };
+    writeJson(OPS_KEY, ops);
+    renderOpsPage({ ensureVisible: true, focusTimelineStageId: stage.id, focusTimelineField: 'name' });
+  }
+
+  function moveProject(projectName, direction) {
+    const ops = readOps();
+    if (!ops[projectName]) return;
+    const orderedNames = getProjectEntries(ops).map((entry) => entry.name);
+    const visibleNames = getFilteredProjects(orderedNames.map((name) => getProjectModel(name, ops))).map((project) => project.name);
+    const visibleIndex = visibleNames.indexOf(projectName);
+    const swapName = visibleNames[visibleIndex + direction];
+    if (!swapName) return;
+    const currentIndex = orderedNames.indexOf(projectName);
+    const swapIndex = orderedNames.indexOf(swapName);
+    if (currentIndex < 0 || swapIndex < 0) return;
+    [orderedNames[currentIndex], orderedNames[swapIndex]] = [orderedNames[swapIndex], orderedNames[currentIndex]];
+    saveProjectOrder(ops, orderedNames);
+    writeJson(OPS_KEY, ops);
+    renderOpsPage({ ensureVisible: true });
+  }
+
+  function moveTimelineStage(projectName, stageId, direction) {
+    const ops = readOps();
+    if (!ops[projectName] || !stageId) return;
+    const project = getProjectModel(projectName, ops);
+    const stages = project.stages.slice();
+    const currentIndex = stages.findIndex((stage) => stage.id === stageId);
+    const swapIndex = currentIndex + direction;
+    if (currentIndex < 0 || swapIndex < 0 || swapIndex >= stages.length) return;
+    [stages[currentIndex], stages[swapIndex]] = [stages[swapIndex], stages[currentIndex]];
+    ops[projectName] = {
+      ...ops[projectName],
+      stages,
+      updatedAt: new Date().toISOString()
+    };
+    writeJson(OPS_KEY, ops);
+    renderOpsPage({ ensureVisible: true, focusTimelineStageId: stageId, focusTimelineField: 'name' });
+  }
+
+  function handleTimelineInlineChange(event) {
+    const field = event.target?.dataset?.opsInlineField;
+    if (!field) return;
+    const row = event.target.closest?.('[data-ops-stage-project]');
+    if (!row) return;
+    saveTimelineStageField(row.dataset.opsStageProject || '', row.dataset.opsStageId || '', field, event.target.value);
+  }
+
+  function handleTimelineInlineKeydown(event) {
+    if (!event.target?.dataset?.opsInlineField) return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.target.blur();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      renderOpsPage({ ensureVisible: true });
+    }
   }
 
   function bindEvents() {
@@ -988,6 +1209,8 @@
     $('opsTimelineNext')?.addEventListener('click', () => moveTimelinePeriod(1));
     $('opsTimelineToday')?.addEventListener('click', resetTimelineCursor);
     $('opsTimelineAddTask')?.addEventListener('click', openTimelineTaskAdd);
+    $('opsTimeline')?.addEventListener('change', handleTimelineInlineChange);
+    $('opsTimeline')?.addEventListener('keydown', handleTimelineInlineKeydown);
     $('opsAddProject')?.addEventListener('click', () => openEditor(null));
     $('opsEditSelected')?.addEventListener('click', () => {
       const projectName = activeProjectFilter === '전체' ? getFilteredProjects()[0]?.name || null : activeProjectFilter;
@@ -1004,9 +1227,23 @@
     });
 
     document.body.addEventListener('click', (event) => {
+      const projectMoveButton = event.target?.closest?.('[data-ops-move-project]');
+      if (projectMoveButton) {
+        event.preventDefault();
+        moveProject(projectMoveButton.dataset.opsProjectName || '', projectMoveButton.dataset.opsMoveProject === 'up' ? -1 : 1);
+        return;
+      }
+      const stageMoveButton = event.target?.closest?.('[data-ops-move-stage]');
+      if (stageMoveButton) {
+        event.preventDefault();
+        moveTimelineStage(stageMoveButton.dataset.opsStageProject || '', stageMoveButton.dataset.opsStageId || '', stageMoveButton.dataset.opsMoveStage === 'up' ? -1 : 1);
+        return;
+      }
       const timelineRow = event.target?.closest?.('[data-ops-stage-project]');
       if (timelineRow) {
-        openEditor(timelineRow.dataset.opsStageProject || '', { focusStageId: timelineRow.dataset.opsStageId || '' });
+        if (!event.target?.closest?.('input, select, textarea, button')) {
+          timelineRow.querySelector('[data-ops-inline-field="name"]')?.focus();
+        }
         return;
       }
       const editButton = event.target?.closest?.('[data-ops-edit]');
@@ -1020,10 +1257,11 @@
 
     document.body.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target?.closest?.('input, select, textarea, button')) return;
       const timelineRow = event.target?.closest?.('[data-ops-stage-project]');
       if (!timelineRow) return;
       event.preventDefault();
-      openEditor(timelineRow.dataset.opsStageProject || '', { focusStageId: timelineRow.dataset.opsStageId || '' });
+      timelineRow.querySelector('[data-ops-inline-field="name"]')?.focus();
     });
 
     window.addEventListener('storage', (event) => {
