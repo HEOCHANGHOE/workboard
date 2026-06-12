@@ -512,9 +512,21 @@
     return direction < 0 ? `이전 ${unit}` : `다음 ${unit}`;
   }
 
+  function getTrackPositionStyle(offset) {
+    return `left:calc(var(--ops-axis-gutter) + ((100% - (var(--ops-axis-gutter) * 2)) * ${offset / 100}));`;
+  }
+
+  function getTrackSizeStyle(metrics) {
+    if (!metrics) return '';
+    return [
+      `left:calc(var(--ops-axis-gutter) + ((100% - (var(--ops-axis-gutter) * 2)) * ${metrics.left / 100}));`,
+      `width:calc((100% - (var(--ops-axis-gutter) * 2)) * ${metrics.width / 100});`
+    ].join('');
+  }
+
   function getBarStyle(row, range) {
     const metrics = getBarMetrics(row, range);
-    return metrics ? `left:${metrics.left}%;width:${metrics.width}%;` : '';
+    return getTrackSizeStyle(metrics);
   }
 
   function getBarMetrics(row, range) {
@@ -534,7 +546,7 @@
     const metrics = getBarMetrics(row, range);
     if (!metrics) return '';
     const progressWidth = metrics.width * (clamp(row.progress, 0, 100) / 100);
-    return `left:${metrics.left}%;width:${Math.max(1.5, progressWidth)}%;`;
+    return getTrackSizeStyle({ left: metrics.left, width: Math.max(1.5, progressWidth) });
   }
 
   function getDoneDays(row) {
@@ -612,7 +624,9 @@
           <div>완료일수</div>
           <div>진행률</div>
           <div class="ops-axis" data-ops-axis title="좌우 드래그 또는 가로 스크롤로 기간 이동">
-            ${axis.map((tick) => `<span style="left:${tick.offset}%">${escapeHtml(tick.label)}</span>`).join('')}
+            <div class="ops-axis-track">
+              ${axis.map((tick) => `<span style="${getTrackPositionStyle(tick.offset)}">${escapeHtml(tick.label)}</span>`).join('')}
+            </div>
             <button type="button" class="ops-axis-nav ops-axis-prev" data-ops-axis-move="-1" title="${escapeHtml(getTimelineMoveText(-1))}" aria-label="${escapeHtml(getTimelineMoveText(-1))}">&#8249;</button>
             <button type="button" class="ops-axis-nav ops-axis-next" data-ops-axis-move="1" title="${escapeHtml(getTimelineMoveText(1))}" aria-label="${escapeHtml(getTimelineMoveText(1))}">&#8250;</button>
           </div>
@@ -637,7 +651,7 @@
                 </div>
               </div>
               <div class="ops-bar-cell ${barStyle ? '' : 'ops-outside-range'}">
-                ${showToday ? `<span class="ops-today-line" style="left:${todayOffset}%"></span>` : ''}
+                ${showToday ? `<span class="ops-today-line" style="${getTrackPositionStyle(todayOffset)}"></span>` : ''}
                 ${barStyle ? `<span class="ops-bar-bg" style="${barStyle}"></span>` : ''}
                 ${progressBarStyle ? `<span class="ops-bar-fill ops-task-${taskStatusClass(row.status)}" style="${progressBarStyle}"></span>` : ''}
               </div>
