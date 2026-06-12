@@ -21,6 +21,8 @@
   let activeEditorProject = '';
   let timelineView = 'weekly';
   let timelineCursor = new Date();
+  let timelineAxisDrag = null;
+  let timelineAxisWheelLocked = false;
 
   function readJson(key, fallback) {
     try {
@@ -444,9 +446,10 @@
   }
 
   function moveTimelinePeriod(direction) {
-    if (timelineView === 'daily') timelineCursor = addDays(timelineCursor, direction * 7);
-    else if (timelineView === 'monthly') timelineCursor = addYears(timelineCursor, direction);
-    else timelineCursor = addMonths(timelineCursor, direction);
+    const step = Number(direction) < 0 ? -1 : 1;
+    if (timelineView === 'daily') timelineCursor = addDays(timelineCursor, step * 7);
+    else if (timelineView === 'monthly') timelineCursor = addYears(timelineCursor, step);
+    else timelineCursor = addMonths(timelineCursor, step);
     renderOpsPage();
   }
 
@@ -502,6 +505,11 @@
       });
     }
     return ticks;
+  }
+
+  function getTimelineMoveText(direction) {
+    const unit = timelineView === 'daily' ? '주' : timelineView === 'weekly' ? '월' : '년';
+    return direction < 0 ? `이전 ${unit}` : `다음 ${unit}`;
   }
 
   function getBarStyle(row, range) {
@@ -603,7 +611,11 @@
           <div>업무일</div>
           <div>완료일수</div>
           <div>진행률</div>
-          <div class="ops-axis">${axis.map((tick) => `<span style="left:${tick.offset}%">${escapeHtml(tick.label)}</span>`).join('')}</div>
+          <div class="ops-axis" data-ops-axis title="좌우 드래그 또는 가로 스크롤로 기간 이동">
+            ${axis.map((tick) => `<span style="left:${tick.offset}%">${escapeHtml(tick.label)}</span>`).join('')}
+            <button type="button" class="ops-axis-nav ops-axis-prev" data-ops-axis-move="-1" title="${escapeHtml(getTimelineMoveText(-1))}" aria-label="${escapeHtml(getTimelineMoveText(-1))}">&#8249;</button>
+            <button type="button" class="ops-axis-nav ops-axis-next" data-ops-axis-move="1" title="${escapeHtml(getTimelineMoveText(1))}" aria-label="${escapeHtml(getTimelineMoveText(1))}">&#8250;</button>
+          </div>
         </div>
         ${rows.map((row) => {
           const totalDays = daysInclusive(parseDate(row.startDate), parseDate(row.endDate));
@@ -1183,6 +1195,51 @@
     }
   }
 
+  function getTimelineAxis(event) {
+    return event.target?.closest?.('[data-ops-axis]') || null;
+  }
+
+  function handleTimelineAxisWheel(event) {
+    const axis = getTimelineAxis(event);
+    if (!axis || timelineAxisWheelLocked) return;
+    const delta = Math.abs(event.deltaX) >= Math.abs(event.deltaY) ? event.deltaX : event.shiftKey ? event.deltaY : 0;
+    if (!delta) return;
+    event.preventDefault();
+    timelineAxisWheelLocked = true;
+    moveTimelinePeriod(delta > 0 ? 1 : -1);
+    window.setTimeout(() => {
+      timelineAxisWheelLocked = false;
+    }, 320);
+  }
+
+  function clearTimelineAxisDrag() {
+    timelineAxisDrag?.axis?.classList.remove('is-dragging');
+    timelineAxisDrag = null;
+  }
+
+  function handleTimelineAxisPointerDown(event) {
+    const axis = getTimelineAxis(event);
+    if (!axis || event.target?.closest?.('button')) return;
+    timelineAxisDrag = {
+      axis,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY
+    };
+    axis.classList.add('is-dragging');
+    axis.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleTimelineAxisPointerUp(event) {
+    if (!timelineAxisDrag) return;
+    const drag = timelineAxisDrag;
+    clearTimelineAxisDrag();
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    moveTimelinePeriod(deltaX < 0 ? 1 : -1);
+  }
+
   function bindEvents() {
     $('tabOps')?.addEventListener('click', (event) => {
       event.preventDefault();
@@ -1211,6 +1268,11 @@
     $('opsTimelineAddTask')?.addEventListener('click', openTimelineTaskAdd);
     $('opsTimeline')?.addEventListener('change', handleTimelineInlineChange);
     $('opsTimeline')?.addEventListener('keydown', handleTimelineInlineKeydown);
+    $('opsTimeline')?.addEventListener('wheel', handleTimelineAxisWheel, { passive: false });
+    $('opsTimeline')?.addEventListener('pointerdown', handleTimelineAxisPointerDown);
+    $('opsTimeline')?.addEventListener('pointerup', handleTimelineAxisPointerUp);
+    $('opsTimeline')?.addEventListener('pointercancel', clearTimelineAxisDrag);
+    $('opsTimeline')?.addEventListener('lostpointercapture', clearTimelineAxisDrag);
     $('opsAddProject')?.addEventListener('click', () => openEditor(null));
     $('opsEditSelected')?.addEventListener('click', () => {
       const projectName = activeProjectFilter === '전체' ? getFilteredProjects()[0]?.name || null : activeProjectFilter;
@@ -1227,6 +1289,12 @@
     });
 
     document.body.addEventListener('click', (event) => {
+      const axisMoveButton = event.target?.closest?.('[data-ops-axis-move]');
+      if (axisMoveButton) {
+        event.preventDefault();
+        moveTimelinePeriod(axisMoveButton.dataset.opsAxisMove);
+        return;
+      }
       const projectMoveButton = event.target?.closest?.('[data-ops-move-project]');
       if (projectMoveButton) {
         event.preventDefault();
