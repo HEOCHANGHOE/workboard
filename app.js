@@ -386,7 +386,7 @@
   function isDueSoon(task) {
     if (task.status === '완료') return false;
     const distance = dueDayDistance(task);
-    return distance != null && distance > 0 && distance <= 3;
+    return distance != null && distance >= 0 && distance <= 3 && !isOverdue(task);
   }
   function urgencyGroup(task) {
     if (task.status === '완료') return 5;
@@ -426,20 +426,25 @@
     if (task?.status === '완료') return 0;
     const distance = dueDayDistance(task);
     if (distance == null) return 0;
-    if (distance < 0) return 7;
-    if (distance === 0) return 8;
+    if (distance <= 0) return 8;
     if (distance === 1) return 5;
     if (distance <= 3) return 3;
-    return 1;
+    if (distance <= 7) return 1;
+    return 0;
   }
   function getPriorityScore(task) {
-    return getBasePriorityScore(task) + getDueDateWeight(task);
+    let score = getBasePriorityScore(task) + getDueDateWeight(task);
+    const distance = dueDayDistance(task);
+    if (distance != null && distance >= 4) score = Math.min(score, 9);
+    return Math.max(score, getDeadlinePriorityFloor(task));
   }
   function getPriorityBadge(score) {
-    if (score >= 8) return { cls: 'score-critical', label: 'Critical' };
-    if (score >= 6) return { cls: 'score-urgent', label: 'High' };
+    if (score >= 13) return { cls: 'score-critical', label: 'Critical' };
+    if (score >= 10) return { cls: 'score-urgent', label: 'Urgent' };
+    if (score >= 8) return { cls: 'score-high', label: 'High' };
+    if (score >= 6) return { cls: 'score-focus', label: 'Focus' };
     if (score >= 4) return { cls: 'score-watch', label: 'Watch' };
-    return { cls: 'score-low', label: 'Low' };
+    return { cls: 'score-later', label: 'Later' };
   }
   function getDueBadgeDisplay(task) {
     const distance = dueDayDistance(task);
@@ -458,11 +463,14 @@
   }
   function calcScore(task) {
     if (task.status === '완료') return -1;
-    let score = getPriorityScore(task);
-    if (isPastDueDay(task)) score += 4;
-    else if (isDueToday(task)) score += 5;
-    else if (isDueSoon(task)) score += 2;
-    if (task.status === '진행중') score += 1;
+    const distance = dueDayDistance(task);
+    let score = getPriorityScore(task) * 10;
+    if (distance != null && distance < 0) score += 40;
+    else if (distance === 0) score += 35;
+    else if (distance === 1) score += 30;
+    else if (distance != null && distance <= 3) score += 20;
+    else if (distance != null && distance <= 7) score += 8;
+    if (task.status === '진행중') score += 3;
     return score;
   }
   function sortTasks(list) {
@@ -498,47 +506,6 @@
     if (distance <= 14) return 4;
     return 0;
   }
-  getDueDateWeight = function dueDateWeightForPriority(task) {
-    if (task?.status === '완료') return 0;
-    const distance = dueDayDistance(task);
-    if (distance == null) return 0;
-    if (distance <= 0) return 8;
-    if (distance === 1) return 5;
-    if (distance <= 3) return 3;
-    if (distance <= 7) return 1;
-    return 0;
-  };
-  getPriorityScore = function priorityScoreForDisplay(task) {
-    let score = getBasePriorityScore(task) + getDueDateWeight(task);
-    const distance = dueDayDistance(task);
-    if (distance != null && distance >= 4) score = Math.min(score, 9);
-    return Math.max(score, getDeadlinePriorityFloor(task));
-  };
-  isDueSoon = function dueTodayOrSoon(task) {
-    if (task.status === '완료') return false;
-    const distance = dueDayDistance(task);
-    return distance != null && distance >= 0 && distance <= 3 && !isOverdue(task);
-  };
-  getPriorityBadge = function priorityBadgeForDisplay(score) {
-    if (score >= 13) return { cls: 'score-critical', label: 'Critical' };
-    if (score >= 10) return { cls: 'score-urgent', label: 'Urgent' };
-    if (score >= 8) return { cls: 'score-high', label: 'High' };
-    if (score >= 6) return { cls: 'score-focus', label: 'Focus' };
-    if (score >= 4) return { cls: 'score-watch', label: 'Watch' };
-    return { cls: 'score-later', label: 'Later' };
-  };
-  calcScore = function taskSortScore(task) {
-    if (task.status === '완료') return -1;
-    const distance = dueDayDistance(task);
-    let score = getPriorityScore(task) * 10;
-    if (distance != null && distance < 0) score += 40;
-    else if (distance === 0) score += 35;
-    else if (distance === 1) score += 30;
-    else if (distance != null && distance <= 3) score += 20;
-    else if (distance != null && distance <= 7) score += 8;
-    if (task.status === '진행중') score += 3;
-    return score;
-  };
   function renderAmpmButton() {
     const btn = $('taskAmpm');
     btn.textContent = dueAmpm;
