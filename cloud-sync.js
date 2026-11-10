@@ -58,9 +58,9 @@
   function isCloudConfigured() {
     return Boolean(
       CONFIG.supabaseUrl &&
-      CONFIG.supabaseAnonKey &&
-      CONFIG.supabaseUrl !== PLACEHOLDER_URL &&
-      CONFIG.supabaseAnonKey !== 'YOUR-SUPABASE-ANON-KEY'
+        CONFIG.supabaseAnonKey &&
+        CONFIG.supabaseUrl !== PLACEHOLDER_URL &&
+        CONFIG.supabaseAnonKey !== 'YOUR-SUPABASE-ANON-KEY'
     );
   }
 
@@ -86,7 +86,9 @@
   }
 
   function isApprovedProfile(profile = accessProfile) {
-    return Boolean(profile && profile.status === 'approved' && ['owner', 'admin', 'member'].includes(profile.role));
+    return Boolean(
+      profile && profile.status === 'approved' && ['owner', 'admin', 'member'].includes(profile.role)
+    );
   }
 
   function isAdminProfile(profile = accessProfile) {
@@ -121,26 +123,32 @@
   }
 
   function isEmptyObjectValue(value) {
-    return value == null || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
+    return (
+      value == null || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0)
+    );
   }
 
   function snapshotHasMeaningfulData(snapshot) {
     if (!snapshot || !snapshot.data) return false;
-    return !isEmptyArrayValue(snapshot.data.work_dashboard_tasks_v1) ||
+    return (
+      !isEmptyArrayValue(snapshot.data.work_dashboard_tasks_v1) ||
       !isEmptyArrayValue(snapshot.data.work_weekly_history_v1) ||
       !isEmptyArrayValue(snapshot.data.work_monthly_history_v1) ||
       !isEmptyObjectValue(snapshot.data.work_project_notes_v1) ||
       !isEmptyObjectValue(snapshot.data.work_project_ops_v1) ||
-      !isEmptyObjectValue(snapshot.data.wt_rec);
+      !isEmptyObjectValue(snapshot.data.wt_rec)
+    );
   }
 
   function localHasMeaningfulData() {
-    return !isEmptyArrayValue(readJsonKey('work_dashboard_tasks_v1')) ||
+    return (
+      !isEmptyArrayValue(readJsonKey('work_dashboard_tasks_v1')) ||
       !isEmptyArrayValue(readJsonKey('work_weekly_history_v1')) ||
       !isEmptyArrayValue(readJsonKey('work_monthly_history_v1')) ||
       !isEmptyObjectValue(readJsonKey('work_project_notes_v1')) ||
       !isEmptyObjectValue(readJsonKey('work_project_ops_v1')) ||
-      !isEmptyObjectValue(readJsonKey('wt_rec'));
+      !isEmptyObjectValue(readJsonKey('wt_rec'))
+    );
   }
 
   function readJsonKey(key) {
@@ -178,12 +186,14 @@
       tasks: Array.isArray(data.work_dashboard_tasks_v1) ? data.work_dashboard_tasks_v1.length : 0,
       weekly: Array.isArray(data.work_weekly_history_v1) ? data.work_weekly_history_v1.length : 0,
       monthly: Array.isArray(data.work_monthly_history_v1) ? data.work_monthly_history_v1.length : 0,
-      notes: data.work_project_notes_v1 && typeof data.work_project_notes_v1 === 'object'
-        ? Object.keys(data.work_project_notes_v1).length
-        : 0,
-      ops: data.work_project_ops_v1 && typeof data.work_project_ops_v1 === 'object'
-        ? Object.keys(data.work_project_ops_v1).length
-        : 0
+      notes:
+        data.work_project_notes_v1 && typeof data.work_project_notes_v1 === 'object'
+          ? Object.keys(data.work_project_notes_v1).length
+          : 0,
+      ops:
+        data.work_project_ops_v1 && typeof data.work_project_ops_v1 === 'object'
+          ? Object.keys(data.work_project_ops_v1).length
+          : 0
     };
   }
 
@@ -335,10 +345,24 @@
     const remoteOnlyEntries = hasEntriesMissingFrom(remote.payload, localSnapshot);
     const localMissingTime = missingEntryContentTime(localSnapshot, remote.payload);
     const remoteMissingTime = missingEntryContentTime(remote.payload, localSnapshot);
-    if (localOnlyEntries && !remoteOnlyEntries && localContentCurrent && localMissingTime > remoteContent + 1000) return 'local-content-newer';
-    if (remoteOnlyEntries && !localOnlyEntries && remoteContentCurrent && remoteMissingTime > localContent + 1000) return 'remote-content-newer';
-    if (localContentCurrent && localContent > remoteContent + 1000 && remoteClock > localClock + 1000) return 'local-content-newer';
-    if (remoteContentCurrent && remoteContent > localContent + 1000 && localClock > remoteClock + 1000) return 'remote-content-newer';
+    if (
+      localOnlyEntries &&
+      !remoteOnlyEntries &&
+      localContentCurrent &&
+      localMissingTime > remoteContent + 1000
+    )
+      return 'local-content-newer';
+    if (
+      remoteOnlyEntries &&
+      !localOnlyEntries &&
+      remoteContentCurrent &&
+      remoteMissingTime > localContent + 1000
+    )
+      return 'remote-content-newer';
+    if (localContentCurrent && localContent > remoteContent + 1000 && remoteClock > localClock + 1000)
+      return 'local-content-newer';
+    if (remoteContentCurrent && remoteContent > localContent + 1000 && localClock > remoteClock + 1000)
+      return 'remote-content-newer';
     if (remoteClock > localClock + 1000 || (localClock === 0 && remoteHasData)) return 'remote';
     if (localClock > remoteClock + 1000) return 'local';
     if (localContent > remoteContent + 1000) return 'local';
@@ -372,10 +396,14 @@
   }
 
   function mergeUniqueArray(remoteValue, localValue) {
-    return Array.from(new Set([
-      ...(Array.isArray(remoteValue) ? remoteValue : []),
-      ...(Array.isArray(localValue) ? localValue : [])
-    ].filter((item) => item != null && String(item).trim() !== '')));
+    return Array.from(
+      new Set(
+        [
+          ...(Array.isArray(remoteValue) ? remoteValue : []),
+          ...(Array.isArray(localValue) ? localValue : [])
+        ].filter((item) => item != null && String(item).trim() !== '')
+      )
+    );
   }
 
   function sameSnapshotData(a, b) {
@@ -383,7 +411,13 @@
   }
 
   function snapshotUpdatedTime(snapshot, fallback) {
-    return Date.parse((snapshot && (snapshot.localUpdatedAt || snapshot.exportedAt)) || fallback || '1970-01-01T00:00:00.000Z') || 0;
+    return (
+      Date.parse(
+        (snapshot && (snapshot.localUpdatedAt || snapshot.exportedAt)) ||
+          fallback ||
+          '1970-01-01T00:00:00.000Z'
+      ) || 0
+    );
   }
 
   function snapshotDataHash(snapshot) {
@@ -433,10 +467,12 @@
     }
     if (typeof value === 'object') {
       const out = {};
-      Object.entries(value).slice(0, maxObjectKeys).forEach(([key, childValue]) => {
-        const safeKey = String(key).slice(0, 160);
-        out[safeKey] = sanitizeJsonValue(childValue, depth + 1, maxObjectKeys);
-      });
+      Object.entries(value)
+        .slice(0, maxObjectKeys)
+        .forEach(([key, childValue]) => {
+          const safeKey = String(key).slice(0, 160);
+          out[safeKey] = sanitizeJsonValue(childValue, depth + 1, maxObjectKeys);
+        });
       return out;
     }
     return null;
@@ -502,7 +538,11 @@
           else originalSetItem.call(localStorage, key, JSON.stringify(value));
         }
       });
-      originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, safeSnapshot.localUpdatedAt || safeSnapshot.exportedAt || new Date().toISOString());
+      originalSetItem.call(
+        localStorage,
+        LOCAL_UPDATED_KEY,
+        safeSnapshot.localUpdatedAt || safeSnapshot.exportedAt || new Date().toISOString()
+      );
     } finally {
       suppressUpload = false;
     }
@@ -579,7 +619,10 @@
     originalSetItem.call(
       localStorage,
       LOCAL_UPDATED_KEY,
-      remote.updated_at || remote.payload.localUpdatedAt || remote.payload.exportedAt || new Date().toISOString()
+      remote.updated_at ||
+        remote.payload.localUpdatedAt ||
+        remote.payload.exportedAt ||
+        new Date().toISOString()
     );
     pendingUploadAfterInitialCheck = false;
     refreshAfterSnapshot(appliedSnapshot);
@@ -596,10 +639,18 @@
   }
 
   function attachRemoteBackupTrail(localSnapshot, remote, reason = '클라우드 덮어쓰기 전 백업') {
-    const existingRemoteBackups = Array.isArray(remote?.payload?.safetyBackups) ? remote.payload.safetyBackups : [];
-    const nextBackups = remote?.payload && snapshotHasMeaningfulData(remote.payload) && !sameSnapshotData(localSnapshot, remote.payload)
-      ? [makeSafetyBackupEntry(remote.payload, reason, 'cloud', remote.updated_at), ...existingRemoteBackups]
-      : existingRemoteBackups;
+    const existingRemoteBackups = Array.isArray(remote?.payload?.safetyBackups)
+      ? remote.payload.safetyBackups
+      : [];
+    const nextBackups =
+      remote?.payload &&
+      snapshotHasMeaningfulData(remote.payload) &&
+      !sameSnapshotData(localSnapshot, remote.payload)
+        ? [
+            makeSafetyBackupEntry(remote.payload, reason, 'cloud', remote.updated_at),
+            ...existingRemoteBackups
+          ]
+        : existingRemoteBackups;
     localSnapshot.safetyBackups = compactSafetyBackups(nextBackups);
     return localSnapshot;
   }
@@ -622,30 +673,41 @@
     if (!force && remoteHasData && winner === 'remote') {
       applyRemoteSnapshot(remote, '오래된 로컬 업로드 차단 전 백업');
       setState('클라우드 최신 적용', 'warn');
-      if (manual) alert('이 기기 데이터가 클라우드보다 오래되어 올리기를 막고, 클라우드 최신 내용을 적용했습니다. 적용 전 로컬 상태는 복구 지점에 보관했습니다.');
+      if (manual)
+        alert(
+          '이 기기 데이터가 클라우드보다 오래되어 올리기를 막고, 클라우드 최신 내용을 적용했습니다. 적용 전 로컬 상태는 복구 지점에 보관했습니다.'
+        );
       return;
     }
     if (!force && remoteHasData && winner === 'remote-content-newer') {
       applyRemoteSnapshot(remote, '내용 기준 클라우드 최신 적용 전 백업');
       setState('클라우드 최신 적용', 'warn');
-      if (manual) alert('클라우드 쪽 내용이 더 최신으로 보여 올리기를 막았습니다. 적용 전 로컬 상태는 복구 지점에 보관했습니다.');
+      if (manual)
+        alert(
+          '클라우드 쪽 내용이 더 최신으로 보여 올리기를 막았습니다. 적용 전 로컬 상태는 복구 지점에 보관했습니다.'
+        );
       return;
     }
     if (!force && remoteHasData && winner === 'conflict') {
       setState('충돌 확인 필요', 'warn');
-      if (!manual || !confirm('클라우드와 이 기기 데이터가 서로 다릅니다. 현재 이 기기 데이터로 클라우드를 덮어쓸까요?')) return;
+      if (
+        !manual ||
+        !confirm('클라우드와 이 기기 데이터가 서로 다릅니다. 현재 이 기기 데이터로 클라우드를 덮어쓸까요?')
+      )
+        return;
     }
     const now = new Date().toISOString();
     if (!getLocalUpdatedAt() || force) originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
     localSnapshot.localUpdatedAt = getLocalUpdatedAt() || now;
     localSnapshot.exportedAt = now;
     attachRemoteBackupTrail(localSnapshot, remote);
-    const { error } = await client
-      .from('work_board_snapshots')
-      .upsert({
+    const { error } = await client.from('work_board_snapshots').upsert(
+      {
         user_id: user.id,
         payload: localSnapshot
-      }, { onConflict: 'user_id' });
+      },
+      { onConflict: 'user_id' }
+    );
     if (error) throw error;
     originalSetItem.call(localStorage, LOCAL_UPDATED_KEY, now);
     setState('저장됨', 'online');
@@ -702,7 +764,9 @@
 
   function formatBackupLabel(entry, index) {
     const captured = new Date(entry.capturedAt || entry.snapshot?.exportedAt || '');
-    const capturedText = Number.isNaN(captured.getTime()) ? '시간 알 수 없음' : captured.toLocaleString('ko-KR');
+    const capturedText = Number.isNaN(captured.getTime())
+      ? '시간 알 수 없음'
+      : captured.toLocaleString('ko-KR');
     const summary = entry.summary || summarizeSnapshot(entry.snapshot);
     return `${index + 1}. ${capturedText} · 업무 ${summary.tasks} · 주간 ${summary.weekly} · 월간 ${summary.monthly} · 노트 ${summary.notes} · ${entry.reason || entry.source || '백업'}`;
   }
@@ -714,12 +778,14 @@
     if (legacyBackupRaw) {
       try {
         const legacySnapshot = JSON.parse(legacyBackupRaw);
-        legacyBackups.push(makeSafetyBackupEntry(
-          legacySnapshot,
-          '동기화 전 되돌리기 백업',
-          'local',
-          legacySnapshot.localUpdatedAt || legacySnapshot.exportedAt
-        ));
+        legacyBackups.push(
+          makeSafetyBackupEntry(
+            legacySnapshot,
+            '동기화 전 되돌리기 백업',
+            'local',
+            legacySnapshot.localUpdatedAt || legacySnapshot.exportedAt
+          )
+        );
       } catch (error) {
         console.error(error);
       }
@@ -731,8 +797,10 @@
     } catch (error) {
       console.error(error);
     }
-    return compactSafetyBackups([...legacyBackups, ...localBackups, ...remoteBackups])
-      .sort((a, b) => parseTime(b.capturedAt || b.snapshot?.exportedAt) - parseTime(a.capturedAt || a.snapshot?.exportedAt));
+    return compactSafetyBackups([...legacyBackups, ...localBackups, ...remoteBackups]).sort(
+      (a, b) =>
+        parseTime(b.capturedAt || b.snapshot?.exportedAt) - parseTime(a.capturedAt || a.snapshot?.exportedAt)
+    );
   }
 
   async function restoreSafetyBackup() {
@@ -750,7 +818,10 @@
       alert('번호를 다시 확인해 주세요.');
       return;
     }
-    if (!confirm('선택한 복구 지점으로 현재 화면 데이터를 바꿀까요? 현재 상태도 복구 지점에 먼저 보관됩니다.')) return;
+    if (
+      !confirm('선택한 복구 지점으로 현재 화면 데이터를 바꿀까요? 현재 상태도 복구 지점에 먼저 보관됩니다.')
+    )
+      return;
     createSafetyBackup('복구 실행 전 현재 상태', buildSnapshot(), 'local');
     const appliedSnapshot = applySnapshot(backups[index].snapshot);
     originalRemoveItem.call(localStorage, PRE_SYNC_BACKUP_KEY);
@@ -827,7 +898,7 @@
       alert('config.js에 Supabase URL과 anon key를 먼저 입력하세요.');
       return;
     }
-    const redirectTo = CONFIG.redirectUrl || (window.location.origin + window.location.pathname);
+    const redirectTo = CONFIG.redirectUrl || window.location.origin + window.location.pathname;
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo }
@@ -933,7 +1004,9 @@
       const remote = await fetchRemoteSnapshot();
       if (!remote || !remote.payload) return;
       const localUpdated = Date.parse(getLocalUpdatedAt() || '1970-01-01T00:00:00.000Z');
-      const remoteUpdated = Date.parse(remote.updated_at || remote.payload.exportedAt || '1970-01-01T00:00:00.000Z');
+      const remoteUpdated = Date.parse(
+        remote.updated_at || remote.payload.exportedAt || '1970-01-01T00:00:00.000Z'
+      );
       const localEmpty = !localHasMeaningfulData();
       const remoteHasData = snapshotHasMeaningfulData(remote.payload);
       if (localEmpty && remoteHasData) {
@@ -982,12 +1055,14 @@
       list.innerHTML = '<div class="empty">사용자 요청이 없습니다.</div>';
       return;
     }
-    list.innerHTML = items.map((profile) => {
-      const isSelf = profile.user_id === getSignedInUser()?.id;
-      const roleDisabled = !isAdminProfile() || (profile.role === 'owner' && accessProfile?.role !== 'owner') || isSelf;
-      const ownerLocked = profile.role === 'owner' && accessProfile?.role !== 'owner';
-      const disabled = isSelf || ownerLocked ? 'disabled' : '';
-      return `
+    list.innerHTML = items
+      .map((profile) => {
+        const isSelf = profile.user_id === getSignedInUser()?.id;
+        const roleDisabled =
+          !isAdminProfile() || (profile.role === 'owner' && accessProfile?.role !== 'owner') || isSelf;
+        const ownerLocked = profile.role === 'owner' && accessProfile?.role !== 'owner';
+        const disabled = isSelf || ownerLocked ? 'disabled' : '';
+        return `
         <div class="user-access-row" data-user-id="${escapeHtml(profile.user_id)}">
           <div class="user-access-person">
             <div class="user-access-email">${escapeHtml(profile.email)}</div>
@@ -1001,7 +1076,8 @@
           </select>
           <button class="btn btn-secondary user-access-save" type="button" data-user-save ${disabled}>저장</button>
         </div>`;
-    }).join('');
+      })
+      .join('');
   }
 
   async function loadUserAccessList() {
@@ -1138,7 +1214,7 @@
             console.error(error);
             setState('승인 확인 실패', 'error');
             renderAccessGate({ email: user.email, status: 'checking' });
-        });
+          });
         return;
       } else {
         accessProfile = null;
@@ -1147,18 +1223,20 @@
         setState('로그인 필요', 'warn');
       }
     });
-    refreshSession().then(() => {
-      checkRemoteFreshness();
-      window.clearInterval(syncTimer);
-      syncTimer = window.setInterval(() => syncWithCloud({ silent: true }), AUTO_SYNC_INTERVAL_MS);
-      window.addEventListener('focus', () => syncWithCloud({ silent: true }));
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) syncWithCloud({ silent: true });
+    refreshSession()
+      .then(() => {
+        checkRemoteFreshness();
+        window.clearInterval(syncTimer);
+        syncTimer = window.setInterval(() => syncWithCloud({ silent: true }), AUTO_SYNC_INTERVAL_MS);
+        window.addEventListener('focus', () => syncWithCloud({ silent: true }));
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) syncWithCloud({ silent: true });
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+        setState('로그인 확인 실패', 'error');
       });
-    }).catch((error) => {
-      console.error(error);
-      setState('로그인 확인 실패', 'error');
-    });
   }
 
   window.addEventListener('DOMContentLoaded', () => {

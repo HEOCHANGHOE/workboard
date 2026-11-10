@@ -11,7 +11,28 @@
   const REPORT_STATUS_LIST = ['진행중', '완료'];
   const REPORT_META_KEYS = ['collaborators', 'startedAt', 'completedAt', 'statusUpdatedAt'];
   const KOREAN_SEQ = '가나다라마바사아자차카타파하';
-  const CIRCLED_NUMBERS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+  const CIRCLED_NUMBERS = [
+    '①',
+    '②',
+    '③',
+    '④',
+    '⑤',
+    '⑥',
+    '⑦',
+    '⑧',
+    '⑨',
+    '⑩',
+    '⑪',
+    '⑫',
+    '⑬',
+    '⑭',
+    '⑮',
+    '⑯',
+    '⑰',
+    '⑱',
+    '⑲',
+    '⑳'
+  ];
 
   const $ = (id) => document.getElementById(id);
 
@@ -45,7 +66,8 @@
     });
 
     if (statusChanged) next.statusUpdatedAt = nowIso;
-    if (!previousTask && REPORT_STATUS_LIST.includes(next.status)) next.statusUpdatedAt = next.statusUpdatedAt || nowIso;
+    if (!previousTask && REPORT_STATUS_LIST.includes(next.status))
+      next.statusUpdatedAt = next.statusUpdatedAt || nowIso;
 
     if (next.status === '진행중' && (statusChanged || !next.startedAt)) {
       next.startedAt = nowIso;
@@ -69,7 +91,9 @@
 
   function mergeTaskReportMetadata(nextTasks, previousTasks) {
     if (!Array.isArray(nextTasks) || !Array.isArray(previousTasks)) return nextTasks;
-    const previousById = new Map(previousTasks.filter((task) => task && task.id != null).map((task) => [String(task.id), task]));
+    const previousById = new Map(
+      previousTasks.filter((task) => task && task.id != null).map((task) => [String(task.id), task])
+    );
     const nowIso = new Date().toISOString();
     return nextTasks.map((task) => {
       if (!task || typeof task !== 'object' || task.id == null) return task;
@@ -200,7 +224,9 @@
   }
 
   function parseDueDateTime(task) {
-    const parts = String(task?.dueDate || '').split('-').map(Number);
+    const parts = String(task?.dueDate || '')
+      .split('-')
+      .map(Number);
     if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
     const time = parseTime(task?.dueTime);
     return new Date(parts[0], parts[1] - 1, parts[2], time.hour, time.minute, 0, 0);
@@ -232,7 +258,10 @@
   function isRelatedWithin(task, range) {
     const created = getCreatedDate(task);
     const due = parseDueDateTime(task);
-    return Boolean((created && created >= range.start && created <= range.end) || (due && due >= range.start && due <= range.end));
+    return Boolean(
+      (created && created >= range.start && created <= range.end) ||
+        (due && due >= range.start && due <= range.end)
+    );
   }
 
   function isReportTaskForRange(task, range) {
@@ -400,10 +429,12 @@
           });
         });
       } else {
-        group.projects.flatMap((project) => project.tasks).forEach((task, taskIndex) => {
-          lines.push(`   ${koreanMarker(taskIndex)}. ${taskTitleLine(task)}`);
-          appendTaskBullets(lines, task, '       ');
-        });
+        group.projects
+          .flatMap((project) => project.tasks)
+          .forEach((task, taskIndex) => {
+            lines.push(`   ${koreanMarker(taskIndex)}. ${taskTitleLine(task)}`);
+            appendTaskBullets(lines, task, '       ');
+          });
       }
     });
 
@@ -468,7 +499,9 @@
       el.innerHTML = '<div class="empty">해당 기간 진행중이거나 완료된 업무 없음</div>';
       return;
     }
-    el.innerHTML = list.map((task) => `
+    el.innerHTML = list
+      .map(
+        (task) => `
       <div class="list-item">
         <span class="status-badge st-${escapeHtml(task.status)}">${escapeHtml(task.status)}</span>
         <div>
@@ -476,7 +509,9 @@
           ${task.project ? `<div class="name-subline">${escapeHtml(task.project)}</div>` : ''}
           <div class="task-meta">${escapeHtml(task.channel || '기타')} · ${escapeHtml(formatDueDisplay(task))}</div>
         </div>
-      </div>`).join('');
+      </div>`
+      )
+      .join('');
   }
 
   function renderPeriodPreview(type) {
@@ -572,17 +607,25 @@
   }
 
   function bindReportButtons() {
-    $('weeklyOpenReport')?.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openStructuredReportModal('weekly');
-    }, true);
+    $('weeklyOpenReport')?.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openStructuredReportModal('weekly');
+      },
+      true
+    );
 
-    $('monthlyOpenReport')?.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openStructuredReportModal('monthly');
-    }, true);
+    $('monthlyOpenReport')?.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openStructuredReportModal('monthly');
+      },
+      true
+    );
   }
 
   function bindReportPreviewRefresh() {
@@ -590,8 +633,12 @@
     $('weeklyNext')?.addEventListener('click', () => schedulePeriodPreviewRefresh('weekly'));
     $('monthlyPrev')?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
     $('monthlyNext')?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
-    document.querySelector('[data-tab="weekly"]')?.addEventListener('click', () => schedulePeriodPreviewRefresh('weekly'));
-    document.querySelector('[data-tab="monthly"]')?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
+    document
+      .querySelector('[data-tab="weekly"]')
+      ?.addEventListener('click', () => schedulePeriodPreviewRefresh('weekly'));
+    document
+      .querySelector('[data-tab="monthly"]')
+      ?.addEventListener('click', () => schedulePeriodPreviewRefresh('monthly'));
     $('saveBtn')?.addEventListener('click', () => window.setTimeout(renderAllPeriodPreviews, 90));
     $('detailModalSave')?.addEventListener('click', () => window.setTimeout(renderAllPeriodPreviews, 90));
     document.body.addEventListener('change', (event) => {
@@ -602,12 +649,16 @@
   }
 
   function bindPersistenceHooks() {
-    $('saveBtn')?.addEventListener('click', () => {
-      const taskId = $('editId')?.value || '';
-      const taskName = $('taskName')?.value || '';
-      const collaborators = $('taskCollaborators')?.value || '';
-      window.setTimeout(() => patchTaskCollaborators(taskId, taskName, collaborators), 60);
-    }, true);
+    $('saveBtn')?.addEventListener(
+      'click',
+      () => {
+        const taskId = $('editId')?.value || '';
+        const taskName = $('taskName')?.value || '';
+        const collaborators = $('taskCollaborators')?.value || '';
+        window.setTimeout(() => patchTaskCollaborators(taskId, taskName, collaborators), 60);
+      },
+      true
+    );
 
     $('resetBtn')?.addEventListener('click', () => {
       window.setTimeout(() => {
@@ -615,34 +666,46 @@
       }, 0);
     });
 
-    $('detailModalSave')?.addEventListener('click', () => {
-      const taskId = $('detailTaskId')?.value || '';
-      const collaborators = $('detailTaskCollaborators')?.value || '';
-      window.setTimeout(() => patchTaskCollaborators(taskId, '', collaborators), 60);
-    }, true);
+    $('detailModalSave')?.addEventListener(
+      'click',
+      () => {
+        const taskId = $('detailTaskId')?.value || '';
+        const collaborators = $('detailTaskCollaborators')?.value || '';
+        window.setTimeout(() => patchTaskCollaborators(taskId, '', collaborators), 60);
+      },
+      true
+    );
 
-    $('projectNoteSave')?.addEventListener('click', () => {
-      const projectName = $('projectNoteName')?.value || '';
-      const reportGroup = $('projectNoteReportGroup')?.value || '';
-      window.setTimeout(() => patchProjectReportGroup(projectName, reportGroup), 90);
-    }, true);
+    $('projectNoteSave')?.addEventListener(
+      'click',
+      () => {
+        const projectName = $('projectNoteName')?.value || '';
+        const reportGroup = $('projectNoteReportGroup')?.value || '';
+        window.setTimeout(() => patchProjectReportGroup(projectName, reportGroup), 90);
+      },
+      true
+    );
 
-    document.body.addEventListener('click', (event) => {
-      const actionEl = event.target?.closest?.('[data-action]');
-      const action = actionEl?.dataset?.action;
-      if (action === 'open-detail') {
-        const taskId = actionEl.dataset.id || '';
-        window.setTimeout(() => fillCollaboratorsForTask(taskId, 'detailTaskCollaborators'), 0);
-      }
-      if (action === 'edit') {
-        const taskId = actionEl.dataset.id || '';
-        window.setTimeout(() => fillCollaboratorsForTask(taskId, 'taskCollaborators'), 0);
-      }
-      if (action === 'open-project-note') {
-        const projectName = actionEl.dataset.project || '';
-        window.setTimeout(() => fillProjectReportGroup(projectName), 0);
-      }
-    }, true);
+    document.body.addEventListener(
+      'click',
+      (event) => {
+        const actionEl = event.target?.closest?.('[data-action]');
+        const action = actionEl?.dataset?.action;
+        if (action === 'open-detail') {
+          const taskId = actionEl.dataset.id || '';
+          window.setTimeout(() => fillCollaboratorsForTask(taskId, 'detailTaskCollaborators'), 0);
+        }
+        if (action === 'edit') {
+          const taskId = actionEl.dataset.id || '';
+          window.setTimeout(() => fillCollaboratorsForTask(taskId, 'taskCollaborators'), 0);
+        }
+        if (action === 'open-project-note') {
+          const projectName = actionEl.dataset.project || '';
+          window.setTimeout(() => fillProjectReportGroup(projectName), 0);
+        }
+      },
+      true
+    );
   }
 
   function init() {

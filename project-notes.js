@@ -141,7 +141,9 @@
       reviewDate: normalizeDate($('projectNoteReviewDate')?.value),
       focus: $('projectNoteFocus')?.value.trim() || '',
       decision: $('projectNoteDecision')?.value.trim() || '',
-      miniTasks: currentMiniTasks.map((task, index) => normalizeMiniTask(task, index)).filter((task) => task.title)
+      miniTasks: currentMiniTasks
+        .map((task, index) => normalizeMiniTask(task, index))
+        .filter((task) => task.title)
     };
   }
 
@@ -171,9 +173,7 @@
 
   function updateMiniTaskStatus(taskId, status) {
     if (!TASK_STATUSES.includes(status)) return;
-    currentMiniTasks = currentMiniTasks.map((task) => (
-      task.id === taskId ? { ...task, status } : task
-    ));
+    currentMiniTasks = currentMiniTasks.map((task) => (task.id === taskId ? { ...task, status } : task));
     renderMiniTasks();
   }
 
@@ -198,10 +198,12 @@
       if (openTaskCount) chips.push(`작업 ${openTaskCount}`);
 
       const existingChips = Array.from(titleWrap.querySelectorAll('.project-note-chip.extended'));
-      const isSame = existingChips.length === chips.length && existingChips.every((chip, index) => {
-        const label = chips[index];
-        return chip.textContent === label && chip.classList.contains('due') === label.startsWith('마감');
-      });
+      const isSame =
+        existingChips.length === chips.length &&
+        existingChips.every((chip, index) => {
+          const label = chips[index];
+          return chip.textContent === label && chip.classList.contains('due') === label.startsWith('마감');
+        });
       if (isSame) return;
 
       existingChips.forEach((chip) => chip.remove());
@@ -253,17 +255,21 @@
       }
     });
 
-    $('projectNoteSave')?.addEventListener('click', () => {
-      const projectName = $('projectNoteName')?.value.trim() || activeProjectName;
-      const fields = collectProjectNoteFields();
-      if (!projectName) return;
+    $('projectNoteSave')?.addEventListener(
+      'click',
+      () => {
+        const projectName = $('projectNoteName')?.value.trim() || activeProjectName;
+        const fields = collectProjectNoteFields();
+        if (!projectName) return;
 
-      setTimeout(() => {
-        persistExtendedNote(projectName, fields);
-        window.WorkBoardApp?.refreshFromStorage?.();
-        setTimeout(decorateProjectSummaries, 0);
-      }, 0);
-    }, true);
+        setTimeout(() => {
+          persistExtendedNote(projectName, fields);
+          window.WorkBoardApp?.refreshFromStorage?.();
+          setTimeout(decorateProjectSummaries, 0);
+        }, 0);
+      },
+      true
+    );
 
     const tableBody = $('taskTableBody');
     if (tableBody) {

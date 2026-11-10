@@ -198,7 +198,9 @@
       startDate,
       endDate,
       status,
-      progress: Number.isFinite(explicitProgress) ? clamp(Math.round(explicitProgress), 0, 100) : estimateProgress(status, startDate, endDate),
+      progress: Number.isFinite(explicitProgress)
+        ? clamp(Math.round(explicitProgress), 0, 100)
+        : estimateProgress(status, startDate, endDate),
       memo: String(stage?.memo || '').trim()
     };
   }
@@ -217,21 +219,21 @@
   }
 
   function inferDateBounds(opsProject) {
-    const stageStarts = Array.isArray(opsProject?.stages) ? opsProject.stages.map((stage) => stage.startDate) : [];
-    const stageEnds = Array.isArray(opsProject?.stages) ? opsProject.stages.map((stage) => stage.endDate) : [];
-    const milestoneDates = Array.isArray(opsProject?.milestones) ? opsProject.milestones.map((milestone) => milestone.date) : [];
-    const starts = getDateValues([
-      opsProject?.startDate,
-      ...stageStarts,
-      ...milestoneDates
-    ]);
-    const ends = getDateValues([
-      opsProject?.endDate,
-      ...stageEnds,
-      ...milestoneDates
-    ]);
+    const stageStarts = Array.isArray(opsProject?.stages)
+      ? opsProject.stages.map((stage) => stage.startDate)
+      : [];
+    const stageEnds = Array.isArray(opsProject?.stages)
+      ? opsProject.stages.map((stage) => stage.endDate)
+      : [];
+    const milestoneDates = Array.isArray(opsProject?.milestones)
+      ? opsProject.milestones.map((milestone) => milestone.date)
+      : [];
+    const starts = getDateValues([opsProject?.startDate, ...stageStarts, ...milestoneDates]);
+    const ends = getDateValues([opsProject?.endDate, ...stageEnds, ...milestoneDates]);
     const today = new Date();
-    const start = starts.length ? new Date(Math.min(...starts.map((date) => date.getTime()))) : new Date(today.getFullYear(), today.getMonth(), 1);
+    const start = starts.length
+      ? new Date(Math.min(...starts.map((date) => date.getTime())))
+      : new Date(today.getFullYear(), today.getMonth(), 1);
     const end = ends.length ? new Date(Math.max(...ends.map((date) => date.getTime()))) : addDays(start, 30);
     return { startDate: toDateInput(start), endDate: toDateInput(end < start ? addDays(start, 14) : end) };
   }
@@ -245,7 +247,9 @@
 
   function projectProgress(project) {
     if (project.stages.length) {
-      return Math.round(project.stages.reduce((sum, stage) => sum + stage.progress, 0) / project.stages.length);
+      return Math.round(
+        project.stages.reduce((sum, stage) => sum + stage.progress, 0) / project.stages.length
+      );
     }
     return project.status === '완료' ? 100 : 0;
   }
@@ -284,22 +288,26 @@
   }
 
   function statusClass(status) {
-    return {
-      정상: 'normal',
-      주의: 'watch',
-      지연: 'delay',
-      보류: 'hold',
-      완료: 'done'
-    }[status] || 'normal';
+    return (
+      {
+        정상: 'normal',
+        주의: 'watch',
+        지연: 'delay',
+        보류: 'hold',
+        완료: 'done'
+      }[status] || 'normal'
+    );
   }
 
   function taskStatusClass(status) {
-    return {
-      미진행: 'todo',
-      진행중: 'doing',
-      대기: 'hold',
-      완료: 'done'
-    }[status] || 'todo';
+    return (
+      {
+        미진행: 'todo',
+        진행중: 'doing',
+        대기: 'hold',
+        완료: 'done'
+      }[status] || 'todo'
+    );
   }
 
   function getFilteredProjects(projects = getProjects()) {
@@ -326,7 +334,9 @@
 
   function renderSummary(projects) {
     const total = projects.length;
-    const active = projects.filter((project) => project.status !== '완료' && project.status !== '보류').length;
+    const active = projects.filter(
+      (project) => project.status !== '완료' && project.status !== '보류'
+    ).length;
     const risk = projects.filter((project) => project.status === '주의' || project.status === '지연').length;
     const done = projects.filter((project) => project.status === '완료').length;
     const avg = total ? Math.round(projects.reduce((sum, project) => sum + project.progress, 0) / total) : 0;
@@ -339,12 +349,16 @@
     ];
     const target = $('opsSummary');
     if (!target) return;
-    target.innerHTML = stats.map(([label, value, tone]) => `
+    target.innerHTML = stats
+      .map(
+        ([label, value, tone]) => `
       <div class="ops-stat">
         <div class="ops-stat-value ${tone ? `tone-${tone}` : ''}">${escapeHtml(value)}</div>
         <div class="ops-stat-label">${escapeHtml(label)}</div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   function renderFilters(projects) {
@@ -355,7 +369,8 @@
       projectSelect.innerHTML = ['전체', ...projects.map((project) => project.name)]
         .map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
         .join('');
-      activeProjectFilter = current === '전체' || projects.some((project) => project.name === current) ? current : '전체';
+      activeProjectFilter =
+        current === '전체' || projects.some((project) => project.name === current) ? current : '전체';
       projectSelect.value = activeProjectFilter;
     }
     if (statusSelect) {
@@ -373,7 +388,9 @@
       target.innerHTML = '<div class="empty">표시할 프로젝트 없음</div>';
       return;
     }
-    target.innerHTML = projects.map((project) => `
+    target.innerHTML = projects
+      .map(
+        (project) => `
       <button type="button" class="ops-project-card" data-ops-edit="${escapeHtml(project.name)}">
         <div class="ops-project-main">
           <span class="ops-status ops-${statusClass(project.status)}">${escapeHtml(project.status)}</span>
@@ -391,7 +408,9 @@
           <span>${project.progress}%</span>
         </div>
       </button>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   function getTimelineRows(projects) {
@@ -411,17 +430,21 @@
           }))
         : [];
 
-      const safeRows = sourceRows.length ? sourceRows : [{
-        project,
-        stageId: '',
-        label: '운영 계획',
-        owner: project.owner,
-        startDate: project.startDate,
-        endDate: project.endDate,
-        status: project.status === '완료' ? '완료' : '진행중',
-        progress: project.progress,
-        memo: project.goal
-      }];
+      const safeRows = sourceRows.length
+        ? sourceRows
+        : [
+            {
+              project,
+              stageId: '',
+              label: '운영 계획',
+              owner: project.owner,
+              startDate: project.startDate,
+              endDate: project.endDate,
+              status: project.status === '완료' ? '완료' : '진행중',
+              progress: project.progress,
+              memo: project.goal
+            }
+          ];
 
       safeRows.forEach((row, index) => rows.push({ ...row, firstInProject: index === 0 }));
     });
@@ -440,7 +463,8 @@
   }
 
   function formatTimelineRange(range) {
-    if (timelineView === 'daily') return `${formatDate(toDateInput(range.start))} ~ ${formatDate(toDateInput(range.end))}`;
+    if (timelineView === 'daily')
+      return `${formatDate(toDateInput(range.start))} ~ ${formatDate(toDateInput(range.end))}`;
     if (timelineView === 'monthly') return `${range.start.getFullYear()}년`;
     return `${range.start.getFullYear()}년 ${range.start.getMonth() + 1}월`;
   }
@@ -466,8 +490,10 @@
 
   function getAxisTicks(range) {
     const centerOffset = (start, end) => {
-      const midpoint = start.getTime() + ((end.getTime() - start.getTime()) / 2);
-      return ((midpoint - range.start.getTime()) / Math.max(1, range.end.getTime() - range.start.getTime())) * 100;
+      const midpoint = start.getTime() + (end.getTime() - start.getTime()) / 2;
+      return (
+        ((midpoint - range.start.getTime()) / Math.max(1, range.end.getTime() - range.start.getTime())) * 100
+      );
     };
     const ticks = [];
 
@@ -584,9 +610,12 @@
     if (!stageId) return;
     window.setTimeout(() => {
       const target = $('opsTimeline');
-      const row = Array.from(target?.querySelectorAll('[data-ops-stage-id]') || [])
-        .find((item) => item.dataset.opsStageId === stageId);
-      const input = row?.querySelector(`[data-ops-inline-field="${field}"]`) || row?.querySelector('[data-ops-inline-field="name"]');
+      const row = Array.from(target?.querySelectorAll('[data-ops-stage-id]') || []).find(
+        (item) => item.dataset.opsStageId === stageId
+      );
+      const input =
+        row?.querySelector(`[data-ops-inline-field="${field}"]`) ||
+        row?.querySelector('[data-ops-inline-field="name"]');
       input?.focus();
       if (input?.select && input.type !== 'date') input.select();
     }, 0);
@@ -610,7 +639,11 @@
     const today = new Date();
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const showToday = todayDate >= range.start && todayDate <= range.end;
-    const todayOffset = clamp(((todayDate - range.start) / Math.max(1, range.end - range.start)) * 100, 0, 100);
+    const todayOffset = clamp(
+      ((todayDate - range.start) / Math.max(1, range.end - range.start)) * 100,
+      0,
+      100
+    );
     const gridStep = 100 / Math.max(1, axis.length);
     target.innerHTML = `
       <div class="ops-timeline-grid ops-timeline-${timelineView}" style="--ops-grid-step:${gridStep}%">
@@ -631,11 +664,12 @@
             <button type="button" class="ops-axis-nav ops-axis-next" data-ops-axis-move="1" title="${escapeHtml(getTimelineMoveText(1))}" aria-label="${escapeHtml(getTimelineMoveText(1))}">&#8250;</button>
           </div>
         </div>
-        ${rows.map((row) => {
-          const totalDays = daysInclusive(parseDate(row.startDate), parseDate(row.endDate));
-          const barStyle = getBarStyle(row, range);
-          const progressBarStyle = getProgressBarStyle(row, range);
-          return `
+        ${rows
+          .map((row) => {
+            const totalDays = daysInclusive(parseDate(row.startDate), parseDate(row.endDate));
+            const barStyle = getBarStyle(row, range);
+            const progressBarStyle = getProgressBarStyle(row, range);
+            return `
             <div class="ops-timeline-row ops-timeline-task-row" data-ops-stage-project="${escapeHtml(row.project.name)}" data-ops-stage-id="${escapeHtml(row.stageId || '')}">
               <div class="ops-project-cell">${renderProjectTimelineCell(row)}</div>
               <div class="ops-task-cell">${renderTaskTimelineCell(row)}</div>
@@ -657,23 +691,32 @@
               </div>
             </div>
           `;
-        }).join('')}
+          })
+          .join('')}
       </div>
     `;
-    if (options.focusTimelineStageId) focusTimelineInput(options.focusTimelineStageId, options.focusTimelineField);
+    if (options.focusTimelineStageId)
+      focusTimelineInput(options.focusTimelineStageId, options.focusTimelineField);
   }
 
   function renderMilestones(projects) {
     const target = $('opsMilestones');
     if (!target) return;
-    const milestones = projects.flatMap((project) => project.milestones.map((milestone) => ({ ...milestone, project: project.name })))
-      .sort((a, b) => (parseDate(a.date)?.getTime() || Number.MAX_SAFE_INTEGER) - (parseDate(b.date)?.getTime() || Number.MAX_SAFE_INTEGER))
+    const milestones = projects
+      .flatMap((project) => project.milestones.map((milestone) => ({ ...milestone, project: project.name })))
+      .sort(
+        (a, b) =>
+          (parseDate(a.date)?.getTime() || Number.MAX_SAFE_INTEGER) -
+          (parseDate(b.date)?.getTime() || Number.MAX_SAFE_INTEGER)
+      )
       .slice(0, 10);
     if (!milestones.length) {
       target.innerHTML = '<div class="empty">등록된 마일스톤 없음</div>';
       return;
     }
-    target.innerHTML = milestones.map((milestone) => `
+    target.innerHTML = milestones
+      .map(
+        (milestone) => `
       <div class="ops-milestone">
         <span class="ops-mile-status ops-mile-${escapeHtml(milestone.status)}">${escapeHtml(milestone.status)}</span>
         <div>
@@ -681,20 +724,27 @@
           <span>${escapeHtml(milestone.project)} · ${escapeHtml(formatDate(milestone.date))}</span>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   function renderIssueBoard(projects) {
     const target = $('opsIssues');
     if (!target) return;
     const items = projects
-      .filter((project) => project.issue || project.nextAction || project.status === '지연' || project.status === '주의')
+      .filter(
+        (project) =>
+          project.issue || project.nextAction || project.status === '지연' || project.status === '주의'
+      )
       .slice(0, 8);
     if (!items.length) {
       target.innerHTML = '<div class="empty">관리 중인 이슈 없음</div>';
       return;
     }
-    target.innerHTML = items.map((project) => `
+    target.innerHTML = items
+      .map(
+        (project) => `
       <button type="button" class="ops-issue" data-ops-edit="${escapeHtml(project.name)}">
         <span class="ops-status ops-${statusClass(project.status)}">${escapeHtml(project.status)}</span>
         <div>
@@ -702,7 +752,9 @@
           <p>${escapeHtml(project.issue || project.nextAction || '이슈 미입력')}</p>
         </div>
       </button>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   function renderOpsPage(options = {}) {
@@ -871,8 +923,12 @@
   }
 
   function showOpsPage() {
-    document.querySelectorAll('.tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === 'ops'));
-    document.querySelectorAll('.page').forEach((page) => page.classList.toggle('active', page.id === 'page-ops'));
+    document
+      .querySelectorAll('.tab')
+      .forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === 'ops'));
+    document
+      .querySelectorAll('.page')
+      .forEach((page) => page.classList.toggle('active', page.id === 'page-ops'));
     sessionStorage.setItem(ACTIVE_TAB_KEY, 'ops');
     sessionStorage.setItem(OPS_ACTIVE_KEY, '1');
     renderOpsPage();
@@ -883,7 +939,8 @@
     if (!app || app.__projectOpsPatch || typeof app.refreshFromStorage !== 'function') return;
     const originalRefresh = app.refreshFromStorage.bind(app);
     app.refreshFromStorage = function projectOpsRefreshFromStorage() {
-      const wasOpsActive = sessionStorage.getItem(ACTIVE_TAB_KEY) === 'ops' || $('page-ops')?.classList.contains('active');
+      const wasOpsActive =
+        sessionStorage.getItem(ACTIVE_TAB_KEY) === 'ops' || $('page-ops')?.classList.contains('active');
       const result = originalRefresh();
       window.setTimeout(() => {
         renderOpsPage();
@@ -938,7 +995,9 @@
   function focusStageRow(stageId) {
     if (!stageId) return;
     window.setTimeout(() => {
-      const row = Array.from(document.querySelectorAll('.ops-stage-row')).find((item) => item.dataset.stageId === stageId);
+      const row = Array.from(document.querySelectorAll('.ops-stage-row')).find(
+        (item) => item.dataset.stageId === stageId
+      );
       if (!row) return;
       row.classList.add('focused');
       row.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
@@ -949,19 +1008,21 @@
   function fillEditor(projectName = '', options = {}) {
     const createNew = projectName == null;
     const names = getProjectNames();
-    const name = createNew ? '' : (projectName || names[0] || '');
-    const project = name ? getProjectModel(name) : {
-      name: '',
-      goal: '',
-      owner: '',
-      status: '정상',
-      startDate: toDateInput(new Date()),
-      endDate: toDateInput(addDays(new Date(), 30)),
-      nextAction: '',
-      issue: '',
-      stages: [],
-      milestones: []
-    };
+    const name = createNew ? '' : projectName || names[0] || '';
+    const project = name
+      ? getProjectModel(name)
+      : {
+          name: '',
+          goal: '',
+          owner: '',
+          status: '정상',
+          startDate: toDateInput(new Date()),
+          endDate: toDateInput(addDays(new Date(), 30)),
+          nextAction: '',
+          issue: '',
+          stages: [],
+          milestones: []
+        };
     activeEditorProject = project.name;
     $('opsOriginalName').value = project.name;
     $('opsProjectName').value = project.name;
@@ -976,7 +1037,17 @@
     const stageList = $('opsStageList');
     stageList.innerHTML = '';
     project.stages.forEach((stage) => stageList.appendChild(createStageRow(stage)));
-    if (!project.stages.length) stageList.appendChild(createStageRow({ name: '기획', owner: project.owner, startDate: project.startDate, endDate: project.endDate, status: '진행중', progress: project.progress || 0 }));
+    if (!project.stages.length)
+      stageList.appendChild(
+        createStageRow({
+          name: '기획',
+          owner: project.owner,
+          startDate: project.startDate,
+          endDate: project.endDate,
+          status: '진행중',
+          progress: project.progress || 0
+        })
+      );
     if (options.addStage && project.name) {
       const row = createStageRow(getStageDefaults(project));
       stageList.appendChild(row);
@@ -986,10 +1057,13 @@
     const mileList = $('opsMilestoneList');
     mileList.innerHTML = '';
     project.milestones.forEach((milestone) => mileList.appendChild(createMilestoneRow(milestone)));
-    if (!project.milestones.length) mileList.appendChild(createMilestoneRow({ title: '', date: project.endDate, status: '예정' }));
+    if (!project.milestones.length)
+      mileList.appendChild(createMilestoneRow({ title: '', date: project.endDate, status: '예정' }));
 
     $('opsModalTitle').textContent = project.name ? `${project.name} 운영정보` : '프로젝트 운영정보';
-    $('opsModalSub').textContent = project.updatedAt ? `마지막 업데이트: ${formatDate(String(project.updatedAt).slice(0, 10))}` : '새 운영정보';
+    $('opsModalSub').textContent = project.updatedAt
+      ? `마지막 업데이트: ${formatDate(String(project.updatedAt).slice(0, 10))}`
+      : '새 운영정보';
     if (options.focusStageId) focusStageRow(options.focusStageId);
   }
 
@@ -1028,8 +1102,12 @@
     const existing = ops[originalName] || ops[name] || {};
     const existingOrder = Number(existing.order);
     if (originalName && originalName !== name) delete ops[originalName];
-    const stages = collectRows('.ops-stage-row', '[data-stage-field]', normalizeStage).filter((stage) => stage.name);
-    const milestones = collectRows('.ops-mile-row', '[data-mile-field]', normalizeMilestone).filter((milestone) => milestone.title);
+    const stages = collectRows('.ops-stage-row', '[data-stage-field]', normalizeStage).filter(
+      (stage) => stage.name
+    );
+    const milestones = collectRows('.ops-mile-row', '[data-mile-field]', normalizeMilestone).filter(
+      (milestone) => milestone.title
+    );
     ops[name] = {
       order: Number.isFinite(existingOrder) ? existingOrder : getNextProjectOrder(ops),
       goal: $('opsGoal')?.value.trim() || '',
@@ -1056,12 +1134,16 @@
 
   function getInlineStageSeed(project) {
     const defaults = getStageDefaults(project);
-    return normalizeStage({
-      ...defaults,
-      id: createStageId(project.stages.length),
-      name: project.stages.length ? '새 Task' : '운영 계획',
-      status: getStatusForProgress(Number(defaults.progress) || 0)
-    }, project.stages.length, project.owner);
+    return normalizeStage(
+      {
+        ...defaults,
+        id: createStageId(project.stages.length),
+        name: project.stages.length ? '새 Task' : '운영 계획',
+        status: getStatusForProgress(Number(defaults.progress) || 0)
+      },
+      project.stages.length,
+      project.owner
+    );
   }
 
   function saveTimelineStageField(projectName, stageId, field, value) {
@@ -1088,12 +1170,20 @@
       stage.owner = String(value || '').trim();
     } else if (field === 'startDate') {
       stage.startDate = normalizeDate(value);
-      if (parseDate(stage.startDate) && parseDate(stage.endDate) && parseDate(stage.endDate) < parseDate(stage.startDate)) {
+      if (
+        parseDate(stage.startDate) &&
+        parseDate(stage.endDate) &&
+        parseDate(stage.endDate) < parseDate(stage.startDate)
+      ) {
         stage.endDate = stage.startDate;
       }
     } else if (field === 'endDate') {
       stage.endDate = normalizeDate(value);
-      if (parseDate(stage.startDate) && parseDate(stage.endDate) && parseDate(stage.endDate) < parseDate(stage.startDate)) {
+      if (
+        parseDate(stage.startDate) &&
+        parseDate(stage.endDate) &&
+        parseDate(stage.endDate) < parseDate(stage.startDate)
+      ) {
         stage.startDate = stage.endDate;
       }
     } else if (field === 'progress') {
@@ -1139,11 +1229,15 @@
     if (!ops[projectName]) return;
     const project = getProjectModel(projectName, ops);
     const stages = project.stages.slice();
-    const stage = normalizeStage({
-      ...getStageDefaults(project),
-      id: createStageId(stages.length),
-      name: '새 Task'
-    }, stages.length, project.owner);
+    const stage = normalizeStage(
+      {
+        ...getStageDefaults(project),
+        id: createStageId(stages.length),
+        name: '새 Task'
+      },
+      stages.length,
+      project.owner
+    );
     stages.push(stage);
     ops[projectName] = {
       ...ops[projectName],
@@ -1158,14 +1252,19 @@
     const ops = readOps();
     if (!ops[projectName]) return;
     const orderedNames = getProjectEntries(ops).map((entry) => entry.name);
-    const visibleNames = getFilteredProjects(orderedNames.map((name) => getProjectModel(name, ops))).map((project) => project.name);
+    const visibleNames = getFilteredProjects(orderedNames.map((name) => getProjectModel(name, ops))).map(
+      (project) => project.name
+    );
     const visibleIndex = visibleNames.indexOf(projectName);
     const swapName = visibleNames[visibleIndex + direction];
     if (!swapName) return;
     const currentIndex = orderedNames.indexOf(projectName);
     const swapIndex = orderedNames.indexOf(swapName);
     if (currentIndex < 0 || swapIndex < 0) return;
-    [orderedNames[currentIndex], orderedNames[swapIndex]] = [orderedNames[swapIndex], orderedNames[currentIndex]];
+    [orderedNames[currentIndex], orderedNames[swapIndex]] = [
+      orderedNames[swapIndex],
+      orderedNames[currentIndex]
+    ];
     saveProjectOrder(ops, orderedNames);
     writeJson(OPS_KEY, ops);
     renderOpsPage({ ensureVisible: true });
@@ -1194,7 +1293,12 @@
     if (!field) return;
     const row = event.target.closest?.('[data-ops-stage-project]');
     if (!row) return;
-    saveTimelineStageField(row.dataset.opsStageProject || '', row.dataset.opsStageId || '', field, event.target.value);
+    saveTimelineStageField(
+      row.dataset.opsStageProject || '',
+      row.dataset.opsStageId || '',
+      field,
+      event.target.value
+    );
   }
 
   function handleTimelineInlineKeydown(event) {
@@ -1216,7 +1320,8 @@
   function handleTimelineAxisWheel(event) {
     const axis = getTimelineAxis(event);
     if (!axis || timelineAxisWheelLocked) return;
-    const delta = Math.abs(event.deltaX) >= Math.abs(event.deltaY) ? event.deltaX : event.shiftKey ? event.deltaY : 0;
+    const delta =
+      Math.abs(event.deltaX) >= Math.abs(event.deltaY) ? event.deltaX : event.shiftKey ? event.deltaY : 0;
     if (!delta) return;
     event.preventDefault();
     timelineAxisWheelLocked = true;
@@ -1255,11 +1360,15 @@
   }
 
   function bindEvents() {
-    $('tabOps')?.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      showOpsPage();
-    }, true);
+    $('tabOps')?.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        showOpsPage();
+      },
+      true
+    );
     document.querySelector('.tabs')?.addEventListener('click', (event) => {
       const tab = event.target?.closest?.('.tab');
       if (tab && tab.dataset.tab !== 'ops') sessionStorage.removeItem(OPS_ACTIVE_KEY);
@@ -1289,15 +1398,20 @@
     $('opsTimeline')?.addEventListener('lostpointercapture', clearTimelineAxisDrag);
     $('opsAddProject')?.addEventListener('click', () => openEditor(null));
     $('opsEditSelected')?.addEventListener('click', () => {
-      const projectName = activeProjectFilter === '전체' ? getFilteredProjects()[0]?.name || null : activeProjectFilter;
+      const projectName =
+        activeProjectFilter === '전체' ? getFilteredProjects()[0]?.name || null : activeProjectFilter;
       openEditor(projectName);
     });
     $('opsModalClose')?.addEventListener('click', closeEditor);
     $('opsModalCancel')?.addEventListener('click', closeEditor);
     $('opsModalSave')?.addEventListener('click', saveEditor);
     $('opsDeleteMeta')?.addEventListener('click', deleteEditorMeta);
-    $('opsAddStage')?.addEventListener('click', () => $('opsStageList')?.appendChild(createStageRow({ status: '미진행', progress: 0 })));
-    $('opsAddMilestone')?.addEventListener('click', () => $('opsMilestoneList')?.appendChild(createMilestoneRow()));
+    $('opsAddStage')?.addEventListener('click', () =>
+      $('opsStageList')?.appendChild(createStageRow({ status: '미진행', progress: 0 }))
+    );
+    $('opsAddMilestone')?.addEventListener('click', () =>
+      $('opsMilestoneList')?.appendChild(createMilestoneRow())
+    );
     $('opsModal')?.addEventListener('click', (event) => {
       if (event.target?.id === 'opsModal') closeEditor();
     });
@@ -1312,13 +1426,20 @@
       const projectMoveButton = event.target?.closest?.('[data-ops-move-project]');
       if (projectMoveButton) {
         event.preventDefault();
-        moveProject(projectMoveButton.dataset.opsProjectName || '', projectMoveButton.dataset.opsMoveProject === 'up' ? -1 : 1);
+        moveProject(
+          projectMoveButton.dataset.opsProjectName || '',
+          projectMoveButton.dataset.opsMoveProject === 'up' ? -1 : 1
+        );
         return;
       }
       const stageMoveButton = event.target?.closest?.('[data-ops-move-stage]');
       if (stageMoveButton) {
         event.preventDefault();
-        moveTimelineStage(stageMoveButton.dataset.opsStageProject || '', stageMoveButton.dataset.opsStageId || '', stageMoveButton.dataset.opsMoveStage === 'up' ? -1 : 1);
+        moveTimelineStage(
+          stageMoveButton.dataset.opsStageProject || '',
+          stageMoveButton.dataset.opsStageId || '',
+          stageMoveButton.dataset.opsMoveStage === 'up' ? -1 : 1
+        );
         return;
       }
       const timelineRow = event.target?.closest?.('[data-ops-stage-project]');
@@ -1357,8 +1478,14 @@
     patchWorkBoardRefresh();
     bindEvents();
     renderOpsPage();
-    window.ProjectOpsApp = { render: renderOpsPage, show: showOpsPage, setView: setTimelineView, movePeriod: moveTimelinePeriod };
-    if (sessionStorage.getItem(ACTIVE_TAB_KEY) === 'ops' || sessionStorage.getItem(OPS_ACTIVE_KEY) === '1') showOpsPage();
+    window.ProjectOpsApp = {
+      render: renderOpsPage,
+      show: showOpsPage,
+      setView: setTimelineView,
+      movePeriod: moveTimelinePeriod
+    };
+    if (sessionStorage.getItem(ACTIVE_TAB_KEY) === 'ops' || sessionStorage.getItem(OPS_ACTIVE_KEY) === '1')
+      showOpsPage();
   }
 
   if (document.readyState === 'loading') {
