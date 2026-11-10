@@ -575,8 +575,10 @@
       ? tasks.find((task) => String(task.id) === String(taskId))
       : tasks.find((task) => String(task.name || '').trim() === String(taskName || '').trim());
     if (!target) return;
+    const previousTasks = readTasks();
     target.collaborators = normalizeCollaborators(collaborators);
     writeJson(TASKS_KEY, tasks);
+    window.WorkBoardHistory?.record(previousTasks, readTasks());
     window.WorkBoardApp?.refreshFromStorage?.();
     schedulePeriodPreviewRefresh();
   }

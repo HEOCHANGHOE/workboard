@@ -242,7 +242,10 @@
     syncProjectOrder();
   }
   function saveTasks() {
+    const previous = safeArrayParse(localStorage.getItem(STORAGE_KEY));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    // Compare stored-before with stored-after so metadata merged by other modules is not seen as a change.
+    window.WorkBoardHistory?.record(previous, safeArrayParse(localStorage.getItem(STORAGE_KEY)));
     syncProjectOrder();
   }
   function saveWeeklyHistory() {
@@ -677,6 +680,7 @@
     $('detailTaskLearning').value = task.learning || '';
     updateDetailPriorityResult();
     $('detailModalSub').textContent = `${task.channel} · ${formatDueDisplay(task)}`;
+    window.WorkBoardHistory?.renderTaskTimeline(task.id);
     $('detailModal').classList.add('open');
   }
   function closeTaskDetailModal() {
@@ -1486,6 +1490,7 @@
     renderTaskTable();
     renderWeeklyPage();
     renderMonthlyPage();
+    window.WorkBoardHistory?.renderRecent();
   }
   function setTab(tabName) {
     const validTabs = new Set(['home', 'tasks', 'weekly', 'monthly', 'work']);

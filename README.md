@@ -15,6 +15,7 @@ https://heochanghoe.github.io/workboard/
 - Today's Priority, Due Soon, Overdue 자동 분류
 - 주간 리포트, 월간 리포트 작성/저장
 - 출근, 퇴근, 근무 시간 기록
+- 업무 변경 이력 자동 기록 (상태, 마감, 프로젝트 등이 바뀌면 별도 입력 없이 남음)
 - Google 로그인 기반 Supabase 클라우드 동기화
 - 로컬 JSON 백업과 복원
 
@@ -22,7 +23,12 @@ https://heochanghoe.github.io/workboard/
 
 - `index.html`: 화면 구조와 앱 진입점
 - `style.css`: 디자인, 레이아웃, 모바일 대응 스타일
-- `app.js`: 업무, 리포트, 근무 관리 로직
+- `app.js`: 업무, 리포트, 차트 로직
+- `task-history.js`: 업무 변경 이력 자동 기록과 표시
+- `work-time.js`: 출근, 퇴근, 근무 시간 기록
+- `edit-mode.js`: 화면 표시 옵션 저장과 적용
+- `project-ops.js`, `project-notes.js`: 프로젝트 운영 타임라인과 운영노트
+- `report-format.js`: 주간/월간 리포트 서식
 - `cloud-sync.js`: Google 로그인, Supabase 동기화, 백업/복원 로직
 - `config.js`: 앱 버전, Supabase URL, Supabase anon public key
 - `supabase-schema.sql`: Supabase 테이블, RLS 정책, 업데이트 트리거
@@ -48,3 +54,16 @@ https://heochanghoe.github.io/workboard/
 - Supabase 무료 프로젝트는 오래 사용하지 않으면 일시중단될 수 있습니다. 이 경우 Supabase 대시보드에서 프로젝트를 다시 시작해야 동기화가 됩니다.
 - `config.js`의 Supabase anon key는 브라우저용 공개 키입니다. 단, `service_role` 키, OAuth secret, DB 비밀번호는 절대 넣으면 안 됩니다.
 - 실제 데이터 접근 권한은 `supabase-schema.sql`의 Row Level Security 정책으로 사용자별 제한됩니다.
+
+## 개발
+
+앱은 빌드 없이 정적 파일로 동작합니다. 아래 도구는 수정할 때만 필요합니다.
+
+```bash
+npm install      # jsdom, prettier 설치
+npm test         # 가상 브라우저에서 업무 등록/수정/삭제/이력 기록을 검증
+npm run format   # 코드 줄 정리
+```
+
+수정 후에는 `index.html`의 `?v=` 값을 바꿔야 브라우저가 새 파일을 받습니다.
+

@@ -7,7 +7,7 @@
     <title>
       Work Board
     </title>
-    <link rel="stylesheet" href="style.css?v=20260527-1" />
+    <link rel="stylesheet" href="style.css?v=20261111-1" />
   </head>
   <body>
     <!-- Top navigation: title, live status, and current time. -->
@@ -565,6 +565,18 @@
           <div class="pagination" id="taskPagination">
           </div>
         </div>
+        <!-- Task history: automatic log of task changes, newest first. -->
+        <div class="card th-card">
+          <div class="card-head">
+            <div class="card-title">
+              변경 이력
+            </div>
+            <div class="th-count" id="taskHistoryCount">
+            </div>
+          </div>
+          <div class="th-list" id="taskHistoryList">
+          </div>
+        </div>
       </section>
       <!-- Weekly report page: review weekly tasks and saved notes. -->
       <section class="page" id="page-weekly">
@@ -1102,6 +1114,13 @@
               </textarea>
             </div>
           </div>
+          <div class="field" style="margin-top:18px;">
+            <div class="card-title" style="margin-bottom:10px;">
+              변경 이력
+            </div>
+            <div class="th-list th-list-modal" id="detailTaskHistory">
+            </div>
+          </div>
         </div>
         <div class="modal-actions">
           <button class="btn btn-secondary" type="button" id="detailModalCancel">
@@ -1405,13 +1424,14 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.0/dist/umd/supabase.min.js" integrity="sha384-zfshMiFERdyezN/WZXzHe9g53pOZCrLPBj/qC0ohHnxQ20c3zXwFqbtRAwvZMacA" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="config.js?v=20260522-1"></script>
-    <script src="cloud-sync.js?v=20260522-1"></script>
-    <script src="app.js?v=20260522-1"></script>
+    <script src="config.js?v=20261111-1"></script>
+    <script src="cloud-sync.js?v=20261111-1"></script>
+    <script src="task-history.js?v=20261111-1"></script>
+    <script src="app.js?v=20261111-1"></script>
     <script src="work-time.js?v=20261111-1"></script>
     <script src="edit-mode.js?v=20261111-1"></script>
     <script src="project-notes.js?v=20260514-2"></script>
-    <script src="report-format.js?v=20260528-1"></script>
+    <script src="report-format.js?v=20261111-1"></script>
     <script src="project-ops.js?v=20260612-2"></script>
   </body>
 </html>

@@ -4,6 +4,7 @@
 
   const DATA_KEYS = [
     'work_dashboard_tasks_v1',
+    'work_task_history_v1',
     'work_weekly_history_v1',
     'work_monthly_history_v1',
     'work_project_order_v1',
@@ -31,6 +32,7 @@
   const MAX_STRING_LENGTH = 12000;
   const DATA_KEY_RULES = {
     work_dashboard_tasks_v1: { type: 'array', maxItems: 3000 },
+    work_task_history_v1: { type: 'array', maxItems: 2000 },
     work_weekly_history_v1: { type: 'array', maxItems: 1000 },
     work_monthly_history_v1: { type: 'array', maxItems: 1000 },
     work_project_order_v1: { type: 'array', maxItems: 1000 },
