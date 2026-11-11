@@ -2528,14 +2528,17 @@ body::before {
 }
 .ops-timeline-grid {
   --ops-axis-gutter: 38px;
-  min-width: 1420px;
+  /* Fit the card width; the columns below set the minimum, so narrow screens still scroll. */
+  min-width: 100%;
+  width: max-content;
+  box-sizing: border-box;
   border: 0.5px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
 }
 .ops-timeline-row {
   display: grid;
-  grid-template-columns: 190px 240px 112px 112px 112px 64px 76px 86px minmax(520px, 1fr);
+  grid-template-columns: 140px 192px 96px 112px 112px 52px 64px 72px minmax(400px, 1fr);
   min-height: 38px;
   border-bottom: 0.5px solid var(--line-soft);
   background: var(--card);
