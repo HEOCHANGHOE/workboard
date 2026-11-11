@@ -2538,7 +2538,7 @@ body::before {
 }
 .ops-timeline-row {
   display: grid;
-  grid-template-columns: 140px 192px 96px 112px 112px 52px 64px 72px minmax(400px, 1fr);
+  grid-template-columns: 140px 212px 108px 112px 112px 52px 64px 68px minmax(380px, 1fr);
   min-height: 38px;
   border-bottom: 0.5px solid var(--line-soft);
   background: var(--card);
@@ -3349,3 +3349,31 @@ body::before {
    (header padding + toggle button + gap), and widen the column so the due date moves right. */
 .table tr.project-task-row td.name-cell { padding-left: 46px; min-width: 260px; max-width: 340px; }
 .density-compact .table tr.project-task-row td.name-cell { padding-left: 46px; }
+
+/* Timeline input cells (담당PM, 착수일, 완료일, 진행률): the inputs carry their own padding,
+   so trim the cell padding to give the values room. */
+.ops-timeline-task-row > div:nth-child(3),
+.ops-timeline-task-row > div:nth-child(4),
+.ops-timeline-task-row > div:nth-child(5),
+.ops-timeline-task-row > div:nth-child(8) {
+  padding-left: 3px;
+  padding-right: 3px;
+}
+/* Smaller calendar icon so the full date fits next to it. */
+.ops-date-input::-webkit-calendar-picker-indicator {
+  margin-left: 2px;
+  padding: 0;
+  width: 12px;
+  height: 12px;
+}
+/* Progress: no spin buttons, so "100" fits. Arrow keys still change the value. */
+.ops-progress-input {
+  width: 40px;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.ops-progress-input::-webkit-outer-spin-button,
+.ops-progress-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
