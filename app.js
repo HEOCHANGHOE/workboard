@@ -1346,24 +1346,26 @@
     const pagination = $('taskPagination');
     const taskCountSummary = $('taskCountSummary');
     if (!tbody || !pagination) return;
-    let filtered = tasks.slice();
-    const activeStatuses = getActiveTaskStatuses();
-    if (!taskFilterStatuses.has('전체'))
-      filtered = filtered.filter((task) => activeStatuses.includes(task.status));
+    // The project filter decides which project groups are shown. The status filter only hides
+    // task rows, so a project with no matching tasks still shows its header.
+    let projectScoped = tasks.slice();
     if (projectFilter !== '전체') {
-      filtered = filtered.filter((task) => {
+      projectScoped = projectScoped.filter((task) => {
         const projectName = String(task.project || '').trim();
         return projectFilter === '__unassigned__' ? !projectName : projectName === projectFilter;
       });
     }
-    filtered = sortTasks(filtered);
-    taskCountSummary.textContent = `${filtered.length}건`;
-    if (!filtered.length) {
+    const activeStatuses = getActiveTaskStatuses();
+    const statusFiltered = !taskFilterStatuses.has('전체');
+    const matchesStatus = (task) => !statusFiltered || activeStatuses.includes(task.status);
+    const filteredCount = projectScoped.filter(matchesStatus).length;
+    taskCountSummary.textContent = `${filteredCount}건`;
+    if (!projectScoped.length) {
       tbody.innerHTML = '<tr><td colspan="9"><div class="empty">조건에 맞는 업무가 없습니다.</div></td></tr>';
       pagination.innerHTML = '';
       return;
     }
-    const grouped = filtered.reduce((acc, task) => {
+    const grouped = sortTasks(projectScoped).reduce((acc, task) => {
       const key = String(task.project || '').trim() || '__unassigned__';
       if (!acc[key]) acc[key] = [];
       acc[key].push(task);
@@ -1371,19 +1373,23 @@
     }, {});
     const orderedEntries = getOrderedProjectGroups(grouped);
     tbody.innerHTML = orderedEntries
-      .map(([projectName, projectTasks]) => {
+      .map(([projectName, allProjectTasks]) => {
+        const projectTasks = allProjectTasks.filter(matchesStatus);
         const groupTitle = projectName === '__unassigned__' ? '미분류' : projectName;
-        const doneCount = projectTasks.filter((task) => task.status === '완료').length;
-        const doingCount = projectTasks.filter((task) => task.status === '진행중').length;
-        const waitCount = projectTasks.filter((task) => task.status === '대기').length;
-        const todoCount = projectTasks.filter((task) => task.status === '미진행').length;
+        const doneCount = allProjectTasks.filter((task) => task.status === '완료').length;
+        const doingCount = allProjectTasks.filter((task) => task.status === '진행중').length;
+        const waitCount = allProjectTasks.filter((task) => task.status === '대기').length;
+        const todoCount = allProjectTasks.filter((task) => task.status === '미진행').length;
+        const taskChip = statusFiltered
+          ? `${projectTasks.length} / ${allProjectTasks.length} TASKS`
+          : `${allProjectTasks.length} TASKS`;
         const collapsed = collapsedProjectGroups.has(projectName);
         const canMoveUp = projectName !== '__unassigned__' && projectOrder.indexOf(projectName) > 0;
         const canMoveDown =
           projectName !== '__unassigned__' &&
           projectOrder.indexOf(projectName) > -1 &&
           projectOrder.indexOf(projectName) < projectOrder.length - 1;
-        const header = `          <tr class="project-group-row">            <td colspan="9">              <div class="project-group-head">                <div class="project-group-main">                  <button type="button" class="project-group-toggle" data-action="toggle-project-group" data-project="${escapeHtml(projectName)}">${collapsed ? '▸' : '▾'}</button>                  <div class="project-title-wrap"><div class="project-group-title">${escapeHtml(groupTitle)}</div>${projectName !== '__unassigned__' ? getProjectNoteSummary(projectName) : ''}</div>                </div>                <div class="project-group-actions">                  <div class="project-group-meta">                    <span class="project-group-chip">${projectTasks.length} TASKS</span>                    <span class="status-badge st-진행중">진행중 ${doingCount}</span>                    <span class="status-badge st-미진행">미진행 ${todoCount}</span>                    <span class="status-badge st-대기">대기 ${waitCount}</span>                    <span class="status-badge st-완료">완료 ${doneCount}</span>                  </div>                  ${projectName !== '__unassigned__' ? `<button type="button" class="project-action-btn project-note-btn" data-action="open-project-note" data-project="${escapeHtml(projectName)}">운영노트</button><button type="button" class="project-action-btn" data-action="rename-project" data-project="${escapeHtml(projectName)}">이름변경</button><button type="button" class="project-action-btn" data-action="move-project-up" data-project="${escapeHtml(projectName)}" ${canMoveUp ? '' : 'disabled'}>↑</button><button type="button" class="project-action-btn" data-action="move-project-down" data-project="${escapeHtml(projectName)}" ${canMoveDown ? '' : 'disabled'}>↓</button>` : ''}                </div>              </div>            </td>          </tr>`;
+        const header = `          <tr class="project-group-row">            <td colspan="9">              <div class="project-group-head">                <div class="project-group-main">                  <button type="button" class="project-group-toggle" data-action="toggle-project-group" data-project="${escapeHtml(projectName)}">${collapsed ? '▸' : '▾'}</button>                  <div class="project-title-wrap"><div class="project-group-title">${escapeHtml(groupTitle)}</div>${projectName !== '__unassigned__' ? getProjectNoteSummary(projectName) : ''}</div>                </div>                <div class="project-group-actions">                  <div class="project-group-meta">                    <span class="project-group-chip">${taskChip}</span>                    <span class="status-badge st-진행중">진행중 ${doingCount}</span>                    <span class="status-badge st-미진행">미진행 ${todoCount}</span>                    <span class="status-badge st-대기">대기 ${waitCount}</span>                    <span class="status-badge st-완료">완료 ${doneCount}</span>                  </div>                  ${projectName !== '__unassigned__' ? `<button type="button" class="project-action-btn project-note-btn" data-action="open-project-note" data-project="${escapeHtml(projectName)}">운영노트</button><button type="button" class="project-action-btn" data-action="rename-project" data-project="${escapeHtml(projectName)}">이름변경</button><button type="button" class="project-action-btn" data-action="move-project-up" data-project="${escapeHtml(projectName)}" ${canMoveUp ? '' : 'disabled'}>↑</button><button type="button" class="project-action-btn" data-action="move-project-down" data-project="${escapeHtml(projectName)}" ${canMoveDown ? '' : 'disabled'}>↓</button>` : ''}                </div>              </div>            </td>          </tr>`;
         if (collapsed) return header;
         const rows = projectTasks
           .map((task) => {

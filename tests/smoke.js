@@ -124,6 +124,21 @@ const historyOf = (w) => JSON.parse(w.localStorage.getItem('work_task_history_v1
     /식약처 보완자료 회신/.test($('taskTableBody').innerHTML) &&
       /주간회의 자료/.test($('taskTableBody').innerHTML)
   );
+  // Status filter hides rows but keeps every project header visible.
+  window.document.querySelector('[data-status-filter="전체"]').click();
+  window.document.querySelector('[data-status-filter="진행중"]').click();
+  const filteredHtml = $('taskTableBody').innerHTML;
+  check(
+    'filter: project header stays visible with no matching tasks',
+    /project-group-title">VAMS</.test(filteredHtml) && /0 \/ 1 TASKS/.test(filteredHtml),
+    filteredHtml.slice(0, 300)
+  );
+  check(
+    'filter: non-matching task rows are hidden',
+    !/식약처 보완자료 회신/.test(filteredHtml) && /주간회의 자료/.test(filteredHtml)
+  );
+  window.document.querySelector('[data-status-filter="전체"]').click();
+  check('filter: clearing shows all rows again', /식약처 보완자료 회신/.test($('taskTableBody').innerHTML));
   const sel = window.document.querySelector('select[data-action="status-select"][data-id="t1"]');
   sel.value = '진행중';
   sel.dispatchEvent(new window.Event('change', { bubbles: true }));
