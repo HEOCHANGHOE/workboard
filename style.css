@@ -3341,3 +3341,8 @@ body::before {
   .mt-item-lead { grid-column: 1 / -1; }
   .mt-filters .select, .mt-filters .input { flex: 1; min-width: 0; }
 }
+
+/* Task rows: indent the task name so it lines up under the project name in the group header
+   (header padding + toggle button + gap), and widen the column so the due date moves right. */
+.table tr.project-task-row td.name-cell { padding-left: 46px; min-width: 260px; max-width: 340px; }
+.density-compact .table tr.project-task-row td.name-cell { padding-left: 46px; }
