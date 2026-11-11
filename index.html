@@ -7,7 +7,7 @@
     <title>
       Work Board
     </title>
-    <link rel="stylesheet" href="style.css?v=20261111-1" />
+    <link rel="stylesheet" href="style.css?v=20261111-2" />
   </head>
   <body>
     <!-- Top navigation: title, live status, and current time. -->
@@ -138,6 +138,9 @@
       <button class="tab" data-tab="tasks">
         업무 목록
       </button>
+      <button class="tab" data-tab="meetings">
+        회의록
+      </button>
       <button class="tab" data-tab="weekly">
         주간 리포트
       </button>
@@ -152,11 +155,34 @@
     <div class="wrap">
       <!-- Home page: quick task entry, priority lists, KPIs, and charts. -->
       <section class="page active" id="page-home">
+        <!-- Quick capture: type freely, tasks are filled in automatically. -->
+        <div class="card capture-card">
+          <div class="capture-head">
+            <label class="capture-title" for="captureInput">
+              빠른 입력
+            </label>
+            <button type="button" class="text-link" id="captureSettingsBtn">
+              입력 설정
+            </button>
+          </div>
+          <textarea id="captureInput" class="textarea capture-input" rows="3" placeholder="예) 내일 3시까지 VAMS 식약처 보완자료 회신, 메일, 급함&#10;한 줄에 한 건씩 적으면 프로젝트, 마감, 우선도를 알아서 채웁니다."></textarea>
+          <div class="capture-foot">
+            <span class="capture-status" id="captureStatus" role="status" aria-live="polite"></span>
+            <span class="capture-hint">
+              Ctrl + Enter
+            </span>
+            <button type="button" class="btn btn-primary" id="captureSubmit">
+              정리해서 등록
+            </button>
+          </div>
+          <div class="capture-result" id="captureResult">
+          </div>
+        </div>
         <div class="grid-2 home-layout">
           <div class="card new-task-card">
             <div class="card-head">
               <div class="card-title">
-                New Task
+                직접 입력
               </div>
             </div>
             <div class="card-body">
@@ -575,6 +601,88 @@
             </div>
           </div>
           <div class="th-list" id="taskHistoryList">
+          </div>
+        </div>
+      </section>
+      <!-- Meetings page: organize transcripts or notes, browse by date or project. -->
+      <section class="page" id="page-meetings">
+        <div class="card mt-new-card">
+          <div class="card-head">
+            <div class="card-title">
+              새 회의록
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="mt-form-row">
+              <div class="field">
+                <label class="label" for="meetingDate">
+                  회의 날짜
+                </label>
+                <input id="meetingDate" class="input" type="date" />
+              </div>
+              <div class="field">
+                <label class="label" for="meetingTitle">
+                  제목 (비워 두면 자동)
+                </label>
+                <input id="meetingTitle" class="input" type="text" placeholder="예: VAMS 인허가 주간 회의" />
+              </div>
+              <div class="field">
+                <label class="label" for="meetingProject">
+                  프로젝트
+                </label>
+                <select id="meetingProject" class="select">
+                  <option value="">
+                    자동 분류
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="meetingText">
+                회의 내용
+              </label>
+              <textarea id="meetingText" class="textarea mt-text" rows="8" placeholder="녹음을 텍스트로 변환한 내용을 붙여 넣거나, 회의 중 적은 메모를 그대로 적으세요."></textarea>
+            </div>
+            <div class="mt-form-foot">
+              <label class="btn btn-secondary mt-file-btn" for="meetingFile">
+                텍스트 파일 불러오기
+              </label>
+              <input id="meetingFile" class="mt-file-input" type="file" accept=".txt,.md,.vtt,.srt,text/plain" />
+              <span class="capture-status" id="meetingStatus" role="status" aria-live="polite"></span>
+              <button type="button" class="btn btn-secondary" id="meetingSaveRaw">
+                원문만 저장
+              </button>
+              <button type="button" class="btn btn-primary" id="meetingOrganize">
+                정리해서 저장
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head mt-list-head">
+            <div class="card-title">
+              회의록
+              <span class="th-count" id="meetingCount"></span>
+            </div>
+            <div class="mt-filters">
+              <div class="mt-view-toggle" role="group" aria-label="보기 방식">
+                <button type="button" class="mt-view-btn active" data-meeting-view="date">
+                  날짜별
+                </button>
+                <button type="button" class="mt-view-btn" data-meeting-view="project">
+                  프로젝트별
+                </button>
+              </div>
+              <select id="meetingFilterProject" class="select" aria-label="프로젝트 필터">
+                <option value="전체">
+                  전체 프로젝트
+                </option>
+              </select>
+              <input id="meetingFilterMonth" class="input" type="month" aria-label="월 필터" />
+              <input id="meetingSearch" class="input" type="search" placeholder="검색" aria-label="회의록 검색" />
+            </div>
+          </div>
+          <div class="mt-list" id="meetingList">
           </div>
         </div>
       </section>
@@ -1132,6 +1240,81 @@
         </div>
       </div>
     </div>
+    <!-- Quick capture settings: defaults that are set once. -->
+    <div class="modal" id="captureSettingsModal">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">
+              입력 설정
+            </div>
+            <div class="modal-sub">
+              한 번 정해 두면 빠른 입력과 회의록 정리에 계속 쓰입니다.
+            </div>
+          </div>
+          <button class="modal-close" type="button" id="captureSettingsClose" aria-label="닫기">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="field">
+              <label class="label" for="captureDefaultChannel">
+                채널을 안 적었을 때
+              </label>
+              <select id="captureDefaultChannel" class="select">
+                <option value="웍스">웍스</option>
+                <option value="메일">메일</option>
+                <option value="전화">전화</option>
+                <option value="회의">회의</option>
+                <option value="구두">구두</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="captureDefaultDueTime">
+                날짜만 적었을 때 마감 시각
+              </label>
+              <input id="captureDefaultDueTime" class="input" type="time" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="cap-check" for="captureAutoApply">
+              <input id="captureAutoApply" type="checkbox" />
+              새 업무는 확인 없이 바로 등록 (되돌리기 가능)
+            </label>
+          </div>
+          <div class="field">
+            <label class="label" for="captureProjectKeywords">
+              프로젝트 키워드
+            </label>
+            <textarea id="captureProjectKeywords" class="textarea compact" rows="4" placeholder="프로젝트명: 키워드, 키워드&#10;예) VAMS: 조합의료기기, 식약처 보완&#10;예) SignalNODE: 시그널노드, 장비 연동"></textarea>
+            <div class="helper-text">
+              이 단어가 들어간 입력은 해당 프로젝트로 분류합니다. 프로젝트명 자체는 적지 않아도 인식합니다.
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="capturePeople">
+              자주 나오는 사람
+            </label>
+            <textarea id="capturePeople" class="textarea compact" rows="2" placeholder="예) 김성훈 교수, 서우영, 류창우"></textarea>
+            <div class="helper-text">
+              AI가 회의 녹취록에서 이름을 바르게 읽고 담당자를 구분하는 데 씁니다.
+            </div>
+          </div>
+          <div class="cap-ai-state" id="captureAiState">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" id="captureSettingsCancel">
+            닫기
+          </button>
+          <button class="btn btn-primary" type="button" id="captureSettingsSave">
+            설정 저장
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- Project operation note modal: track ongoing project context. -->
     <div class="modal" id="projectNoteModal">
       <div class="modal-box project-note-modal-box">
@@ -1424,12 +1607,14 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.0/dist/umd/supabase.min.js" integrity="sha384-zfshMiFERdyezN/WZXzHe9g53pOZCrLPBj/qC0ohHnxQ20c3zXwFqbtRAwvZMacA" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="config.js?v=20261111-1"></script>
-    <script src="cloud-sync.js?v=20261111-1"></script>
-    <script src="task-history.js?v=20261111-1"></script>
-    <script src="app.js?v=20261111-1"></script>
+    <script src="config.js?v=20261111-2"></script>
+    <script src="cloud-sync.js?v=20261111-2"></script>
+    <script src="task-history.js?v=20261111-2"></script>
+    <script src="app.js?v=20261111-2"></script>
     <script src="work-time.js?v=20261111-1"></script>
     <script src="edit-mode.js?v=20261111-1"></script>
+    <script src="smart-capture.js?v=20261111-2"></script>
+    <script src="meetings.js?v=20261111-2"></script>
     <script src="project-notes.js?v=20260514-2"></script>
     <script src="report-format.js?v=20261111-1"></script>
     <script src="project-ops.js?v=20260612-2"></script>

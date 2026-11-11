@@ -1493,7 +1493,7 @@
     window.WorkBoardHistory?.renderRecent();
   }
   function setTab(tabName) {
-    const validTabs = new Set(['home', 'tasks', 'weekly', 'monthly', 'work']);
+    const validTabs = new Set(['home', 'tasks', 'meetings', 'weekly', 'monthly', 'work']);
     if (!validTabs.has(tabName)) tabName = 'home';
     currentTab = tabName;
     sessionStorage.setItem(ACTIVE_TAB_KEY, tabName);
@@ -1505,6 +1505,7 @@
     });
     if (tabName === 'tasks') renderTaskTable();
     if (tabName === 'weekly') renderWeeklyPage();
+    if (tabName === 'meetings') window.WorkBoardMeetings?.render();
     if (tabName === 'monthly') renderMonthlyPage();
     if (tabName === 'work') {
       setTimeout(() => {
@@ -1744,7 +1745,110 @@
     if (typeof window.wmRenderAll === 'function') window.wmRenderAll();
     window.scrollTo(x, y);
   }
-  window.WorkBoardApp = { refreshFromStorage };
+  // ----- Public API used by other modules (quick capture, meetings) -----
+  const TASK_PATCH_FIELDS = [
+    'name',
+    'channel',
+    'dueDate',
+    'dueTime',
+    'status',
+    'project',
+    'description',
+    'outcome',
+    'learning'
+  ];
+  function derivePriorityLabel(task) {
+    return task.impact >= 3 || task.urgency >= 3 ? '상' : getPriorityScore(task) >= 6 ? '중' : '하';
+  }
+  function afterTaskMutation() {
+    saveTasks();
+    refreshProjectFilterOptions();
+    renderProjectSelectOptions();
+    renderAll();
+  }
+  function addTasks(rawList) {
+    const stamp = Date.now();
+    const created = (Array.isArray(rawList) ? rawList : [])
+      .map((raw, index) => {
+        const task = normalizeTask(
+          {
+            ...raw,
+            id: `task_${stamp}_${index}_${Math.random().toString(36).slice(2, 6)}`,
+            createdAt: new Date().toISOString()
+          },
+          index
+        );
+        task.priority = derivePriorityLabel(task);
+        return task;
+      })
+      .filter((task) => task.name);
+    if (!created.length) return [];
+    tasks.unshift(...created);
+    afterTaskMutation();
+    return created.map((task) => ({ ...task }));
+  }
+  function patchTask(taskId, patch) {
+    const task = tasks.find((item) => item.id === String(taskId));
+    if (!task || !patch || typeof patch !== 'object') return null;
+    TASK_PATCH_FIELDS.forEach((field) => {
+      if (typeof patch[field] === 'string') task[field] = patch[field].trim();
+    });
+    if (!STATUS_LIST.includes(task.status)) task.status = '미진행';
+    if (!CHANNEL_LIST.includes(task.channel)) task.channel = '기타';
+    ['impact', 'urgency', 'linkage'].forEach((field) => {
+      if ([1, 2, 3].includes(Number(patch[field]))) task[field] = Number(patch[field]);
+    });
+    task.priority = derivePriorityLabel(task);
+    afterTaskMutation();
+    return { ...task };
+  }
+  function removeTasks(taskIds) {
+    const ids = new Set((Array.isArray(taskIds) ? taskIds : []).map(String));
+    const before = tasks.length;
+    tasks = tasks.filter((task) => !ids.has(task.id));
+    if (tasks.length !== before) afterTaskMutation();
+    return before - tasks.length;
+  }
+  // Appends dated lines to a project's operation note instead of overwriting what is there.
+  function appendProjectNote(projectName, patch) {
+    const name = String(projectName || '').trim();
+    if (!name || !patch || typeof patch !== 'object') return null;
+    const all = readObjectStorage(PROJECT_NOTES_KEY);
+    const note = { ...emptyProjectNote(), ...(all[name] && typeof all[name] === 'object' ? all[name] : {}) };
+    const now = new Date();
+    const stampText = `${pad2(now.getMonth() + 1)}.${pad2(now.getDate())}`;
+    ['progress', 'next', 'issue', 'memo'].forEach((field) => {
+      const text = typeof patch[field] === 'string' ? patch[field].trim() : '';
+      if (!text) return;
+      const line = `[${stampText}] ${text}`;
+      note[field] = String(note[field] || '').trim() ? `${String(note[field]).trim()}\n${line}` : line;
+    });
+    if (['정상', '주의', '지연', '보류'].includes(patch.status)) note.status = patch.status;
+    note.updatedAt = now.toISOString();
+    all[name] = note;
+    projectNotes = all;
+    saveProjectNotes();
+    renderTaskTable();
+    return { ...note };
+  }
+  window.WorkBoardApp = {
+    refreshFromStorage,
+    getTasks: () => tasks.map((task) => ({ ...task })),
+    getProjectNames: () => {
+      syncProjectOrder();
+      return projectOrder.slice();
+    },
+    addTasks,
+    patchTask,
+    removeTasks,
+    appendProjectNote,
+    openTaskDetail: (taskId) => openTaskDetailModal(String(taskId)),
+    setTab: (tabName) => setTab(tabName),
+    statusList: STATUS_LIST.slice(),
+    channelList: CHANNEL_LIST.slice(),
+    priorityOf: (task) => getPriorityDisplay(task),
+    formatDue: (task) => formatDueDisplay(task)
+  };
   function init() {
     updateVersionLabel();
     loadTaskStatusFilters();

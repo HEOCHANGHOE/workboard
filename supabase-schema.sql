@@ -336,3 +336,50 @@ for update
 to authenticated
 using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()))
 with check (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+-- ============================================================
+-- Meeting original texts (v2.7.0)
+-- Minutes (summary, decisions, action items) live in the snapshot.
+-- The full transcript is large, so it is stored here, one row per meeting.
+-- Safe to run more than once.
+-- ============================================================
+create table if not exists public.work_board_meeting_texts (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  meeting_id text not null check (char_length(meeting_id) between 1 and 80),
+  raw_text text not null check (char_length(raw_text) <= 200000),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, meeting_id)
+);
+
+alter table public.work_board_meeting_texts enable row level security;
+
+drop policy if exists "Approved users can read their meeting texts" on public.work_board_meeting_texts;
+create policy "Approved users can read their meeting texts"
+on public.work_board_meeting_texts
+for select
+to authenticated
+using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+drop policy if exists "Approved users can insert their meeting texts" on public.work_board_meeting_texts;
+create policy "Approved users can insert their meeting texts"
+on public.work_board_meeting_texts
+for insert
+to authenticated
+with check (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+drop policy if exists "Approved users can update their meeting texts" on public.work_board_meeting_texts;
+create policy "Approved users can update their meeting texts"
+on public.work_board_meeting_texts
+for update
+to authenticated
+using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()))
+with check (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+drop policy if exists "Approved users can delete their meeting texts" on public.work_board_meeting_texts;
+create policy "Approved users can delete their meeting texts"
+on public.work_board_meeting_texts
+for delete
+to authenticated
+using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+grant select, insert, update, delete on public.work_board_meeting_texts to authenticated;

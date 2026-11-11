@@ -5,6 +5,8 @@
   const DATA_KEYS = [
     'work_dashboard_tasks_v1',
     'work_task_history_v1',
+    'work_meetings_v1',
+    'work_capture_settings_v1',
     'work_weekly_history_v1',
     'work_monthly_history_v1',
     'work_project_order_v1',
@@ -33,6 +35,8 @@
   const DATA_KEY_RULES = {
     work_dashboard_tasks_v1: { type: 'array', maxItems: 3000 },
     work_task_history_v1: { type: 'array', maxItems: 2000 },
+    work_meetings_v1: { type: 'array', maxItems: 1000 },
+    work_capture_settings_v1: { type: 'object', maxKeys: 40 },
     work_weekly_history_v1: { type: 'array', maxItems: 1000 },
     work_monthly_history_v1: { type: 'array', maxItems: 1000 },
     work_project_order_v1: { type: 'array', maxItems: 1000 },
@@ -1240,6 +1244,13 @@
         setState('로그인 확인 실패', 'error');
       });
   }
+
+  // Minimal handle for other modules (AI calls, meeting transcripts). Everything still goes through RLS.
+  window.WorkBoardCloud = {
+    getClient: () => client,
+    getUserId: () => session?.user?.id || null,
+    isReady: () => Boolean(client && session && isApprovedProfile())
+  };
 
   window.addEventListener('DOMContentLoaded', () => {
     bindUi();

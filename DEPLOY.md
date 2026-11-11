@@ -110,3 +110,53 @@ PC에 업무 데이터가 이미 있는 경우:
 3. 로그인 후 `클라우드 저장됨` 또는 정상 상태 표시가 되는지 확인
 4. PC에서 만든 업무가 휴대폰에서도 보이는지 확인
 5. 휴대폰에서 만든 업무가 PC에서도 보이는지 확인
+
+## 8. AI 정리 기능 연결 (v2.7.0)
+
+빠른 입력과 회의록의 AI 정리는 Supabase Edge Function을 거쳐 Claude API를 호출합니다.
+API 키는 Supabase 서버에만 저장되고 브라우저와 이 저장소에는 들어가지 않습니다.
+연결하지 않아도 빠른 입력은 기본 규칙으로 동작하고, 회의록은 원문 저장까지 됩니다.
+
+### 8-1. 회의 원문 테이블 만들기
+
+Supabase 대시보드 > SQL Editor에서 `supabase-schema.sql` 전체를 다시 실행합니다.
+여러 번 실행해도 안전하며, `work_board_meeting_texts` 테이블이 추가됩니다.
+
+### 8-2. Claude API 키 발급
+
+1. https://console.anthropic.com 에 로그인합니다. (claude.ai 구독과 별개의 계정/결제입니다.)
+2. Billing에서 결제 수단을 등록하고 크레딧을 충전합니다.
+3. API Keys > Create Key로 키를 만들고 복사합니다. 키는 다시 볼 수 없습니다.
+4. Limits에서 월 사용 한도를 걸어 두면 예상 밖 과금을 막을 수 있습니다.
+
+### 8-3. Edge Function 배포
+
+대시보드에서 하는 방법:
+
+1. Supabase 대시보드 > Edge Functions > Deploy a new function > Via Editor
+2. 함수 이름을 `workboard-ai`로 입력합니다. (이름이 다르면 앱이 찾지 못합니다.)
+3. `supabase/functions/workboard-ai/index.ts` 내용을 그대로 붙여 넣고 Deploy 합니다.
+4. Edge Functions > Secrets에서 `ANTHROPIC_API_KEY` 이름으로 8-2의 키를 저장합니다.
+
+CLI로 하는 방법:
+
+```bash
+supabase login
+supabase link --project-ref zsysapxopcxaqvxaqpxe
+supabase secrets set ANTHROPIC_API_KEY=여기에_키
+supabase functions deploy workboard-ai
+```
+
+선택 Secret:
+
+- `ANTHROPIC_MODEL`: 사용할 모델을 고정합니다. 비워 두면 함수가 사용 가능한 모델을 순서대로 시도합니다.
+- `ALLOWED_ORIGINS`: 호출을 허용할 주소. 기본값은 `https://heochanghoe.github.io` 입니다.
+
+### 8-4. 확인
+
+1. Work Board에 Google 로그인합니다.
+2. 홈의 `입력 설정`을 열어 아래쪽에 `AI 사용 가능`이 보이는지 확인합니다.
+3. 빠른 입력에 한 줄을 적고 등록했을 때 상태 문구가 `AI 정리`로 나오면 연결된 것입니다.
+   `기본 규칙으로 정리`가 나오면 함수 이름, Secret, 로그인 상태를 확인합니다.
+
+함수는 로그인한 승인 사용자만 호출할 수 있습니다. 승인되지 않은 계정은 403으로 거절됩니다.
