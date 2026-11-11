@@ -41,7 +41,12 @@ function makeRuntime({ env = {}, user = { id: 'u1' }, approved = true, claude })
   return { call, fetchCalls };
 }
 
-const ok = (input) => new Response(JSON.stringify({ content: [{ type: 'tool_use', name: 'x', input }] }), { status: 200 });
+const ok = (input) =>
+  new Response(JSON.stringify({ stop_reason: 'end_turn', content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: JSON.stringify(input) }] }), { status: 200 });
+const allObjectsStrict = (node) =>
+  !node || typeof node !== 'object' ? true
+    : Array.isArray(node) ? node.every(allObjectsStrict)
+    : (node.type !== 'object' || node.additionalProperties === false) && Object.values(node).every(allObjectsStrict);
 const results = [];
 const check = (name, cond, detail = '') => results.push({ name, ok: !!cond, detail });
 
@@ -54,7 +59,7 @@ const check = (name, cond, detail = '') => results.push({ name, ok: !!cond, deta
     const data = await res.json();
     const sent = rt.fetchCalls[0];
     check('capture: returns actions', res.status === 200 && data.actions.length === 1 && data.actions[0].task.name === '견적 회신');
-    check('capture: key sent to Claude only via header, forced tool use', sent.headers['x-api-key'] === 'sk-test' && sent.body.tool_choice.name === 'record_actions' && !JSON.stringify(sent.body).includes('sk-test'));
+    check('capture: key sent to Claude only via header, structured output schema', sent.headers['x-api-key'] === 'sk-test' && !sent.body.tool_choice && !sent.body.tools && sent.body.output_config.format.type === 'json_schema' && allObjectsStrict(sent.body.output_config.format.schema) && !!sent.body.output_config.format.schema.properties.actions && !JSON.stringify(sent.body).includes('sk-test'));
     check('capture: note and context included in prompt', sent.body.messages[0].content.includes('내일 견적 회신') && sent.body.messages[0].content.includes('VAMS') && sent.body.messages[0].content.includes('2026-11-11'));
     check('cors: allowed origin echoed', res.headers.get('access-control-allow-origin') === 'https://heochanghoe.github.io');
     check('response: key never appears in output', !JSON.stringify(data).includes('sk-test'));
@@ -63,7 +68,7 @@ const check = (name, cond, detail = '') => results.push({ name, ok: !!cond, deta
     const rt = makeRuntime({ env: { ANTHROPIC_API_KEY: 'k' }, claude: () => ok({ title: '주간 회의', summary: ['a'], decisions: [], actionItems: [], openIssues: [] }) });
     const res = await rt.call({ mode: 'meeting', text: '회의 내용', today: '2026-11-11', projects: [], hint: { date: '2026-11-10' }, kind: 'transcript' });
     const data = await res.json();
-    check('meeting: returns minutes', res.status === 200 && data.meeting.title === '주간 회의' && rt.fetchCalls[0].body.tool_choice.name === 'record_meeting' && rt.fetchCalls[0].body.messages[0].content.includes('2026-11-10'));
+    check('meeting: returns minutes', res.status === 200 && data.meeting.title === '주간 회의' && !!rt.fetchCalls[0].body.output_config.format.schema.properties.actionItems && rt.fetchCalls[0].body.messages[0].content.includes('2026-11-10'));
   }
   { // model fallback on 404
     let n = 0;
@@ -71,6 +76,12 @@ const check = (name, cond, detail = '') => results.push({ name, ok: !!cond, deta
     const res = await rt.call({ mode: 'capture', text: 'x' });
     const data = await res.json();
     check('model: falls back to the next model when one is unavailable', res.status === 200 && rt.fetchCalls.length === 2 && rt.fetchCalls[0].body.model !== rt.fetchCalls[1].body.model && data.model === rt.fetchCalls[1].body.model);
+  }
+  { // refusal / truncated reply are errors, not empty results
+    const rtRefuse = makeRuntime({ env: { ANTHROPIC_API_KEY: 'k' }, claude: () => new Response(JSON.stringify({ stop_reason: 'refusal', content: [] }), { status: 200 }) });
+    const rtCut = makeRuntime({ env: { ANTHROPIC_API_KEY: 'k' }, claude: () => new Response(JSON.stringify({ stop_reason: 'max_tokens', content: [{ type: 'text', text: '{"actions":[' }] }), { status: 200 }) });
+    check('response: refusal -> 502', (await rtRefuse.call({ mode: 'capture', text: 'x' })).status === 502);
+    check('response: cut-off reply -> 502', (await rtCut.call({ mode: 'capture', text: 'x' })).status === 502);
   }
   { // pinned model
     const rt = makeRuntime({ env: { ANTHROPIC_API_KEY: 'k', ANTHROPIC_MODEL: 'my-model' }, claude: () => ok({ actions: [] }) });

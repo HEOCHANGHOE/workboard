@@ -48,7 +48,9 @@ const list = (value: unknown, maxItems: number, maxLength: number) =>
   (Array.isArray(value) ? value : []).slice(0, maxItems).map((item) => text(item, maxLength));
 
 // ---------------------------------------------------------------------------
-// Tool schemas: Claude must answer by filling one of these, so the output is always structured.
+// Response schemas. They are sent as structured outputs (output_config.format), which
+// constrains Claude's reply to valid JSON for the schema. Forced tool_choice is not used
+// because current models (Sonnet 5.5, Opus 5.5) reject tool_choice "tool"/"any".
 // ---------------------------------------------------------------------------
 const LEVEL = { type: 'integer', enum: [1, 2, 3] };
 const DATE = { type: 'string', description: 'YYYY-MM-DD, or empty string when no date is stated or implied' };
@@ -159,6 +161,21 @@ Rules:
 - Transcripts may contain recognition errors; infer the intended words for product names and people from the provided lists.
 - Concise Korean, without honorifics.`;
 
+// Structured outputs require additionalProperties: false on every object.
+function strictSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(strictSchema);
+  if (!schema || typeof schema !== 'object') return schema;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(schema as Record<string, unknown>)) {
+    out[key] =
+      key === 'properties' && value && typeof value === 'object'
+        ? Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, strictSchema(v)]))
+        : strictSchema(value);
+  }
+  if (out.type === 'object') out.additionalProperties = false;
+  return out;
+}
+
 async function callClaude(apiKey: string, system: string, userContent: string, tool: typeof CAPTURE_TOOL | typeof MEETING_TOOL, maxTokens: number) {
   const pinned = Deno.env.get('ANTHROPIC_MODEL');
   const models = pinned ? [pinned] : MODEL_FALLBACKS;
@@ -174,9 +191,8 @@ async function callClaude(apiKey: string, system: string, userContent: string, t
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          system,
-          tools: [tool],
-          tool_choice: { type: 'tool', name: tool.name },
+          system: `${system}\n\nReply with JSON only: ${tool.description}`,
+          output_config: { effort: 'medium', format: { type: 'json_schema', schema: strictSchema(tool.input_schema) } },
           messages: [{ role: 'user', content: userContent }]
         })
       });
@@ -189,9 +205,17 @@ async function callClaude(apiKey: string, system: string, userContent: string, t
         throw new Error(`Claude API ${response.status}: ${detail.slice(0, 300)}`);
       }
       const data = await response.json();
-      const block = (data.content || []).find((item: { type: string }) => item.type === 'tool_use');
-      if (!block) throw new Error('Claude returned no structured result');
-      return { result: block.input, model };
+      if (data.stop_reason === 'refusal') throw new Error('Claude declined this request');
+      if (data.stop_reason === 'max_tokens') throw new Error('Claude response was cut off (max_tokens)');
+      const textBlock = (data.content || []).find((item: { type: string }) => item.type === 'text');
+      if (!textBlock?.text) throw new Error('Claude returned no structured result');
+      let result: unknown;
+      try {
+        result = JSON.parse(textBlock.text);
+      } catch {
+        throw new Error('Claude returned invalid JSON');
+      }
+      return { result: result as Record<string, unknown>, model };
     } finally {
       clearTimeout(timer);
     }
@@ -250,7 +274,7 @@ Deno.serve(async (request) => {
         `open tasks (for update_task): ${JSON.stringify(tasks)}`,
         `<note>\n${note}\n</note>`
       ].join('\n\n');
-      const { result, model } = await callClaude(apiKey, CAPTURE_SYSTEM, userContent, CAPTURE_TOOL, 3000);
+      const { result, model } = await callClaude(apiKey, CAPTURE_SYSTEM, userContent, CAPTURE_TOOL, 16000);
       return json(request, 200, { actions: Array.isArray(result?.actions) ? result.actions : [], model });
     }
 
@@ -268,7 +292,7 @@ Deno.serve(async (request) => {
         `input kind: ${body.kind === 'memo' ? 'rough notes typed by the user' : 'speech-to-text transcript'}`,
         `<meeting>\n${transcript}\n</meeting>`
       ].join('\n\n');
-      const { result, model } = await callClaude(apiKey, MEETING_SYSTEM, userContent, MEETING_TOOL, 4000);
+      const { result, model } = await callClaude(apiKey, MEETING_SYSTEM, userContent, MEETING_TOOL, 16000);
       return json(request, 200, { meeting: result || {}, model });
     }
 
