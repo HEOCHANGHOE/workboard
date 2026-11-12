@@ -180,13 +180,9 @@ def parse_run_log(path):
     return entries
 
 
-def main():
-    if len(sys.argv) < 2:
-        print(__doc__)
-        sys.exit(2)
-    root = sys.argv[1]
+def build_feed(root):
+    """Return the feed dict for a report folder."""
     auto = os.path.join(root, '_automation')
-    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(auto, 'workboard_feed.json')
     config = read_json(os.path.join(auto, 'config.json'), {})
     state = read_json(os.path.join(auto, 'state.json'), {})
     reports = collect_reports(root)
@@ -209,7 +205,7 @@ def main():
             'commitReports': counts.get(short, {}).get('commit', 0),
             'releaseReports': counts.get(short, {}).get('release', 0),
         })
-    feed = {
+    return {
         'type': 'workboard-github-feed',
         'version': 1,
         'generatedAt': datetime.now(KST).isoformat(timespec='seconds'),
@@ -219,9 +215,22 @@ def main():
         'runs': parse_run_log(os.path.join(auto, 'run_log.md')),
         'reports': sorted(reports, key=lambda r: (r.get('date') or r['modified'][:10], r['modified']), reverse=True),
     }
+
+
+def write_feed(feed, out):
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(feed, f, ensure_ascii=False, separators=(',', ':'))
-    print(f'{out}: repos {len(repos)}, runs {len(feed["runs"])}, reports {len(reports)}, '
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(2)
+    root = sys.argv[1]
+    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(root, '_automation', 'workboard_feed.json')
+    feed = build_feed(root)
+    write_feed(feed, out)
+    print(f'{out}: repos {len(feed["repos"])}, runs {len(feed["runs"])}, reports {len(feed["reports"])}, '
           f'{os.path.getsize(out) // 1024} KB')
 
 

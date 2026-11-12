@@ -430,3 +430,54 @@ to authenticated
 using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
 
 grant select, insert, update, delete on public.work_board_github_feed to authenticated;
+
+-- ------------------------------------------------------------
+-- Unattended upload of the GitHub feed (tools/github-feed-sync.py).
+-- A feed token can only replace its owner's row in work_board_github_feed.
+-- Only the token's SHA-256 hash is stored. Create one in the SQL Editor:
+--   insert into public.work_board_feed_tokens (token_hash, user_id, label)
+--   select '<sha256 hex of the token>', id, 'report PC' from auth.users where email = '<your login email>'
+--   returning user_id;
+-- ------------------------------------------------------------
+create table if not exists public.work_board_feed_tokens (
+  token_hash text primary key check (token_hash ~ '^[0-9a-f]{64}$'),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  label text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.work_board_feed_tokens enable row level security;
+revoke all on public.work_board_feed_tokens from anon, authenticated;
+
+create or replace function public.work_board_ingest_github_feed(p_token text, p_feed jsonb)
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target uuid;
+  stored timestamptz := now();
+begin
+  if p_token is null or length(p_token) < 32 then
+    raise exception 'invalid feed token' using errcode = '28000';
+  end if;
+  select t.user_id into target
+  from public.work_board_feed_tokens t
+  where t.token_hash = encode(sha256(convert_to(p_token, 'UTF8')), 'hex');
+  if target is null or not public.work_board_is_approved(target) then
+    raise exception 'invalid feed token' using errcode = '28000';
+  end if;
+  if p_feed is null or p_feed->>'type' is distinct from 'workboard-github-feed' then
+    raise exception 'invalid feed' using errcode = '22023';
+  end if;
+  insert into public.work_board_github_feed (user_id, feed, generated_at, updated_at)
+  values (target, p_feed, nullif(p_feed->>'generatedAt', '')::timestamptz, stored)
+  on conflict (user_id) do update
+    set feed = excluded.feed, generated_at = excluded.generated_at, updated_at = excluded.updated_at;
+  return stored;
+end;
+$$;
+
+revoke all on function public.work_board_ingest_github_feed(text, jsonb) from public;
+grant execute on function public.work_board_ingest_github_feed(text, jsonb) to anon, authenticated;

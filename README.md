@@ -31,6 +31,7 @@ https://heochanghoe.github.io/workboard/
 - `meetings.js`: 회의록 정리, 저장, 조회
 - `github-reports.js`: Github 관리 탭. 보고서 피드를 가져와 Supabase `work_board_github_feed`(사용자별, RLS)에 저장
 - `tools/github-feed-export.py`: 보고서 폴더(`_automation`, docx)에서 피드 JSON 생성. `python tools/github-feed-export.py <REPORT_ROOT>` → `<REPORT_ROOT>/_automation/workboard_feed.json`. 보고서 내용은 공개 저장소에 넣지 않습니다
+- `tools/github-feed-sync.py`: 피드를 다시 만들고 내용이 바뀌었을 때만 RPC `work_board_ingest_github_feed`로 업로드. 설정과 업로드 토큰은 `%USERPROFILE%\.workboard\github-feed.json`(저장소·공유 폴더 밖), DB에는 토큰의 SHA-256만 저장. `tools/install-github-feed-task.ps1`로 매시간 Windows 작업 스케줄러 등록
 - `supabase/functions/workboard-ai/index.ts`: Claude API를 호출하는 서버 함수 (API 키 보관 위치)
 - `task-history.js`: 업무 변경 이력 자동 기록과 표시
 - `work-time.js`: 출근, 퇴근, 근무 시간 기록
