@@ -7,7 +7,7 @@
     <title>
       Work Board
     </title>
-    <link rel="stylesheet" href="style.css?v=20261111-8" />
+    <link rel="stylesheet" href="style.css?v=20261112-2" />
   </head>
   <body>
     <!-- Top navigation: title, live status, and current time. -->
@@ -149,6 +149,9 @@
       </button>
       <button class="tab" data-tab="work">
         근무관리
+      </button>
+      <button class="tab" data-tab="github">
+        Github 관리
       </button>
     </div>
     <!-- Main content wrapper. -->
@@ -684,6 +687,72 @@
           </div>
           <div class="mt-list" id="meetingList">
           </div>
+        </div>
+      </section>
+      <!-- Github page: daily algorithm-update report routine (repo status, run log, report summaries). -->
+      <section class="page" id="page-github">
+        <div class="card gh-status-card">
+          <div class="card-head gh-head">
+            <div>
+              <div class="card-title">
+                저장소 현황
+              </div>
+              <div class="gh-meta" id="ghMeta"></div>
+            </div>
+            <div class="gh-actions">
+              <input id="ghImportFile" class="mt-file-input" type="file" accept=".json,application/json" />
+              <button type="button" class="btn btn-secondary" id="ghImportBtn">
+                피드 가져오기
+              </button>
+            </div>
+          </div>
+          <div class="gh-status" id="ghStatus" role="status" aria-live="polite"></div>
+          <div class="table-wrap">
+            <table class="table gh-repo-table">
+              <thead>
+                <tr>
+                  <th>저장소</th>
+                  <th>최근 커밋</th>
+                  <th>최근 태그</th>
+                  <th class="gh-num">커밋 보고서</th>
+                  <th class="gh-num">릴리즈 보고서</th>
+                  <th>최근 보고서일</th>
+                </tr>
+              </thead>
+              <tbody id="ghRepoBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head mt-list-head">
+            <div class="card-title">
+              Algo update report
+              <span class="th-count" id="ghCount"></span>
+            </div>
+            <div class="mt-filters">
+              <div class="mt-view-toggle" role="group" aria-label="보기 방식">
+                <button type="button" class="mt-view-btn active" data-gh-view="runs">
+                  일일 실행
+                </button>
+                <button type="button" class="mt-view-btn" data-gh-view="reports">
+                  보고서
+                </button>
+              </div>
+              <select id="ghRepoFilter" class="select" aria-label="저장소 필터"></select>
+              <select id="ghKindFilter" class="select" aria-label="보고서 종류" hidden>
+                <option value="">전체 종류</option>
+                <option value="commit">커밋</option>
+                <option value="release">릴리즈</option>
+                <option value="quarterly">분기 종합</option>
+              </select>
+              <label class="gh-check" id="ghChangedOnlyWrap">
+                <input type="checkbox" id="ghChangedOnly" checked />
+                변경 있는 날만
+              </label>
+              <input id="ghSearch" class="input" type="search" placeholder="검색" aria-label="보고서 검색" />
+            </div>
+          </div>
+          <div class="mt-list" id="ghList"></div>
         </div>
       </section>
       <!-- Weekly report page: review weekly tasks and saved notes. -->
@@ -1607,14 +1676,15 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.0/dist/umd/supabase.js" integrity="sha384-at3jkbgBWGYJtKuo3KcThCv2TCqDPWZu8tWJHxU35hgCToRWtFg41X88MYssX4eh" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="config.js?v=20261111-2"></script>
+    <script src="config.js?v=20261112-1"></script>
     <script src="cloud-sync.js?v=20261111-2"></script>
     <script src="task-history.js?v=20261111-2"></script>
-    <script src="app.js?v=20261111-3"></script>
+    <script src="app.js?v=20261112-1"></script>
     <script src="work-time.js?v=20261111-1"></script>
     <script src="edit-mode.js?v=20261111-1"></script>
     <script src="smart-capture.js?v=20261111-2"></script>
     <script src="meetings.js?v=20261111-2"></script>
+    <script src="github-reports.js?v=20261112-2"></script>
     <script src="project-notes.js?v=20260514-2"></script>
     <script src="report-format.js?v=20261111-1"></script>
     <script src="project-ops.js?v=20260612-2"></script>

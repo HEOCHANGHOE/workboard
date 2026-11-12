@@ -3377,3 +3377,53 @@ body::before {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* ============================================================
+   Github 관리 (algorithm-update report routine)
+   ============================================================ */
+.gh-status-card { margin-bottom: 16px; }
+.gh-head { align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.gh-meta { margin-top: 4px; font-size: 12.5px; color: var(--ink-3); line-height: 1.6; }
+.gh-meta b { color: var(--ink-2); font-weight: 600; }
+.gh-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.gh-status { padding: 0 var(--gutter); font-size: 12.5px; color: var(--ink-2); }
+.gh-status:empty { display: none; }
+.gh-status:not(:empty) { padding-top: 10px; }
+.gh-repo-table td, .gh-repo-table th { white-space: nowrap; }
+.gh-repo-table code, .gh-detail code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; color: var(--ink-2); }
+.gh-repo-row { cursor: pointer; }
+.gh-repo-row:hover { background: var(--line-soft); }
+.gh-repo-row.active { background: var(--accent-soft); }
+.gh-repo-row.active .gh-repo-name { color: var(--accent); }
+.gh-repo-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.gh-repo-name { font-weight: 600; color: var(--ink); }
+.gh-tag { max-width: 240px; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); }
+.gh-num { text-align: right; font-variant-numeric: tabular-nums; }
+.gh-date { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.gh-empty { padding: 22px var(--gutter); font-size: 13px; color: var(--ink-3); white-space: normal !important; }
+.gh-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+.gh-item-head { grid-template-columns: 130px minmax(0, 1fr) auto; }
+.gh-report-head { grid-template-columns: 100px minmax(140px, 260px) minmax(0, 1fr); }
+.gh-badge {
+  font-size: 11.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap;
+  padding: 2px 9px; border-radius: 9999px; background: var(--card-3);
+}
+.gh-badge-new { color: var(--green); background: var(--green-soft); }
+.gh-detail { padding: 2px var(--gutter) 18px; max-width: 920px; }
+.gh-run-text { font-size: 13px; line-height: 1.75; color: var(--ink-2); word-break: break-word; }
+.gh-run-text strong { color: var(--ink); }
+.gh-report-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-top: 6px; }
+.gh-report-links { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; }
+.gh-muted { font-size: 12px; color: var(--ink-3); }
+.gh-facts { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 4px 12px; margin: 14px 0 0; font-size: 12.5px; }
+.gh-facts dt { color: var(--ink-3); }
+.gh-facts dd { margin: 0; color: var(--ink-2); word-break: break-all; }
+.gh-more { padding: 14px var(--gutter); text-align: center; border-top: 1px solid var(--line-soft); }
+@media (max-width: 720px) {
+  .gh-actions { margin-left: 0; }
+  .gh-item-head, .gh-report-head { grid-template-columns: 1fr auto; }
+  .gh-report-head .mt-item-lead { grid-column: 1 / -1; }
+  .gh-item-head .mt-item-lead { grid-column: 1 / -1; grid-row: 2; white-space: normal; }
+}
+.mt-filters [hidden] { display: none !important; }
+.gh-run-text p { margin: 0 0 6px; }

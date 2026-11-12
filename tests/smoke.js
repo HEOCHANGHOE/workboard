@@ -194,7 +194,7 @@ const historyOf = (w) => JSON.parse(w.localStorage.getItem('work_task_history_v1
     'history: recent list rendered on tasks page',
     $('taskHistoryList').querySelectorAll('.th-row').length === 3
   );
-  ['tasks', 'weekly', 'monthly', 'work', 'home'].forEach((tab) => {
+  ['tasks', 'weekly', 'monthly', 'work', 'github', 'home'].forEach((tab) => {
     const el = window.document.querySelector(`.tab[data-tab="${tab}"]`);
     if (el) el.click();
   });
@@ -591,6 +591,123 @@ async function meetingsFlow() {
   check('meetings: no errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 }
 
+async function githubFlow() {
+  const { window, errors, $ } = boot();
+  const rows = new Map();
+  window.WorkBoardCloud = {
+    isReady: () => true,
+    getUserId: () => 'user-1',
+    getClient: () => ({
+      from: (name) => {
+        const q = {};
+        q.upsert = async (row) => {
+          rows.set(`${name}:${row.user_id}`, row);
+          return { error: null };
+        };
+        q.select = () => q;
+        q.maybeSingle = async () => ({ data: rows.get(`${name}:user-1`) || null, error: null });
+        return q;
+      }
+    })
+  };
+  window.document.querySelector('.tab[data-tab="github"]').click();
+  check('github: tab opens page', $('page-github').classList.contains('active'));
+  check('github: empty state shown', /피드 가져오기/.test($('ghRepoBody').innerHTML));
+  const feed = {
+    type: 'workboard-github-feed',
+    version: 1,
+    generatedAt: '2026-11-12T08:00:00+09:00',
+    schedule: '매일 07:00',
+    repos: [
+      {
+        name: 'org/RepoA',
+        short: 'RepoA',
+        lastChecked: '2026-11-12T07:26:00+09:00',
+        lastCommit: 'abc1234',
+        lastTag: 'v1.2.0',
+        commitReports: 3,
+        releaseReports: 1
+      },
+      {
+        name: 'org/RepoB',
+        short: 'RepoB',
+        lastChecked: '2026-11-12T07:26:00+09:00',
+        lastCommit: 'def5678',
+        commitReports: 1
+      }
+    ],
+    runs: [
+      {
+        date: '2026-11-12',
+        time: '07:26',
+        text: '확인 2개 repo | 변경 1개 repo(RepoA) | 신규 보고서 2건 | **중요** <img src=x>',
+        headline: '확인 2개 repo | 변경 1개 repo(RepoA)',
+        newReports: 2,
+        changed: true
+      },
+      {
+        date: '2026-11-11',
+        time: '07:10',
+        text: '확인 2개 repo | 변경 없음(조기 종료) | 신규 보고서 0건',
+        headline: '확인 2개 repo | 변경 없음',
+        newReports: 0,
+        changed: false
+      }
+    ],
+    reports: [
+      {
+        repo: 'RepoA',
+        kind: 'release',
+        key: 'v1.2.0',
+        file: 'RepoA/releases/a.docx',
+        modified: '2026-11-12 07:26',
+        title: 'RepoA v1.1.0 → v1.2.0',
+        summary: ['신호 품질 판정 개선']
+      },
+      {
+        repo: 'RepoA',
+        kind: 'commit',
+        key: '20261111',
+        date: '2026-11-11',
+        file: 'RepoA/commits/b.docx',
+        modified: '2026-11-12 07:26',
+        title: 'RepoA 커밋 보고 (2026-11-11)',
+        summary: ['로그 설정 기본값 변경']
+      },
+      {
+        repo: 'RepoB',
+        kind: 'commit',
+        key: '20200101',
+        date: '2020-01-01',
+        file: 'RepoB/commits/c.docx',
+        modified: '2026-06-11 08:00'
+      }
+    ]
+  };
+  check('github: rejects unrelated JSON', window.WorkBoardGithub.cleanFeed({ tasks: [] }) === null);
+  const where = await window.WorkBoardGithub.importFeed(feed);
+  window.WorkBoardGithub.render();
+  await wait(20);
+  check('github: import saved to cloud', where === 'cloud' && rows.has('work_board_github_feed:user-1'));
+  check('github: not added to synced snapshot keys', !window.localStorage.getItem('work_dashboard_tasks_v1'));
+  check('github: repo table rendered', $('ghRepoBody').querySelectorAll('.gh-repo-row').length === 2);
+  check('github: only changed runs by default', $('ghList').querySelectorAll('.mt-item').length === 1);
+  $('ghList').querySelector('[data-gh-toggle]').click();
+  check(
+    'github: run detail escapes HTML and keeps bold',
+    /<strong>중요<\/strong>/.test($('ghList').innerHTML) && !$('ghList').querySelector('img')
+  );
+  const link = $('ghList').querySelector('[data-gh-open-report]');
+  link.click();
+  check(
+    'github: linked report opens in report view',
+    $('ghList').querySelector('.mt-item.open') && /신호 품질 판정 개선/.test($('ghList').innerHTML)
+  );
+  $('ghRepoBody').querySelector('[data-gh-repo="RepoB"]').click();
+  check('github: repo row filters reports', $('ghList').querySelectorAll('.mt-item').length === 1);
+  check('github: no errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+}
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 (async () => {
@@ -599,6 +716,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   await captureAiFailure();
   await captureSettings();
   await meetingsFlow();
+  await githubFlow();
 
   let failed = 0;
   results.forEach((r) => {

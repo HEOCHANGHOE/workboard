@@ -11,6 +11,7 @@ https://heochanghoe.github.io/workboard/
 ## 주요 기능
 
 - 빠른 입력: 한 줄로 적으면 프로젝트, 채널, 마감, 우선도를 자동으로 채워 등록
+- Github 관리: 매일 07:00 알고리즘 업데이트 검토 보고서 루틴의 저장소 현황, 일일 실행 이력, 보고서 요약 조회
 - 회의록: 녹음 텍스트나 메모를 요약, 결정사항, 액션아이템으로 정리하고 프로젝트별/날짜별 조회
 - 업무 등록, 빠른 수정, 상태 변경
 - 프로젝트별 업무 분류, 운영노트, 업무 목록 필터링
@@ -28,6 +29,8 @@ https://heochanghoe.github.io/workboard/
 - `app.js`: 업무, 리포트, 차트 로직
 - `smart-capture.js`: 빠른 입력 (기본 규칙 해석, AI 연동, 입력 설정)
 - `meetings.js`: 회의록 정리, 저장, 조회
+- `github-reports.js`: Github 관리 탭. 보고서 피드를 가져와 Supabase `work_board_github_feed`(사용자별, RLS)에 저장
+- `tools/github-feed-export.py`: 보고서 폴더(`_automation`, docx)에서 피드 JSON 생성. `python tools/github-feed-export.py <REPORT_ROOT>` → `<REPORT_ROOT>/_automation/workboard_feed.json`. 보고서 내용은 공개 저장소에 넣지 않습니다
 - `supabase/functions/workboard-ai/index.ts`: Claude API를 호출하는 서버 함수 (API 키 보관 위치)
 - `task-history.js`: 업무 변경 이력 자동 기록과 표시
 - `work-time.js`: 출근, 퇴근, 근무 시간 기록

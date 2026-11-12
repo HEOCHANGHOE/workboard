@@ -1499,7 +1499,7 @@
     window.WorkBoardHistory?.renderRecent();
   }
   function setTab(tabName) {
-    const validTabs = new Set(['home', 'tasks', 'meetings', 'weekly', 'monthly', 'work']);
+    const validTabs = new Set(['home', 'tasks', 'meetings', 'weekly', 'monthly', 'work', 'github']);
     if (!validTabs.has(tabName)) tabName = 'home';
     currentTab = tabName;
     sessionStorage.setItem(ACTIVE_TAB_KEY, tabName);
@@ -1512,6 +1512,7 @@
     if (tabName === 'tasks') renderTaskTable();
     if (tabName === 'weekly') renderWeeklyPage();
     if (tabName === 'meetings') window.WorkBoardMeetings?.render();
+    if (tabName === 'github') window.WorkBoardGithub?.render();
     if (tabName === 'monthly') renderMonthlyPage();
     if (tabName === 'work') {
       setTimeout(() => {

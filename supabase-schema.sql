@@ -383,3 +383,50 @@ to authenticated
 using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
 
 grant select, insert, update, delete on public.work_board_meeting_texts to authenticated;
+
+-- ============================================================
+-- GitHub report feed (v2.8.0)
+-- One row per user: the "Github 관리" tab's feed (repo status, daily run log,
+-- report summaries) built by tools/github-feed-export.py from the report folder.
+-- Kept out of the snapshot because it is large and is replaced as a whole.
+-- Safe to run more than once.
+-- ============================================================
+create table if not exists public.work_board_github_feed (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  feed jsonb not null check (octet_length(feed::text) <= 4000000),
+  generated_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.work_board_github_feed enable row level security;
+
+drop policy if exists "Approved users can read their GitHub feed" on public.work_board_github_feed;
+create policy "Approved users can read their GitHub feed"
+on public.work_board_github_feed
+for select
+to authenticated
+using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+drop policy if exists "Approved users can insert their GitHub feed" on public.work_board_github_feed;
+create policy "Approved users can insert their GitHub feed"
+on public.work_board_github_feed
+for insert
+to authenticated
+with check (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+drop policy if exists "Approved users can update their GitHub feed" on public.work_board_github_feed;
+create policy "Approved users can update their GitHub feed"
+on public.work_board_github_feed
+for update
+to authenticated
+using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()))
+with check (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+drop policy if exists "Approved users can delete their GitHub feed" on public.work_board_github_feed;
+create policy "Approved users can delete their GitHub feed"
+on public.work_board_github_feed
+for delete
+to authenticated
+using (auth.uid() = user_id and public.work_board_is_approved(auth.uid()));
+
+grant select, insert, update, delete on public.work_board_github_feed to authenticated;
